@@ -1,0 +1,5049 @@
+{
+  "name": "Podcast Video Automation v1 - CONTROLLED RUNTIME TEST - INACTIVE",
+  "description": null,
+  "active": false,
+  "activeVersionId": null,
+  "versionCounter": 39,
+  "sourceWorkflowId": null,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "71000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger - Start Approved Controlled Podcast Runtime Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const c={\n  test_mode:true, runtime_test_authorized:true, test_run_id:'podcast-runtime-test-20260911-01', cost_ceiling_usd:0.50,\n  source_file_id:'YOUR_DRIVE_FILE_ID', source_file_name:'Video Podcast 3 min (1).mp4', source_mime:'video/mp4', source_duration_seconds:175.999,\n  intake_folder_id:'YOUR_INTAKE_FOLDER_ID', test_working_folder_id:'YOUR_WORKING_FOLDER_ID', output_parent_folder_id:'YOUR_OUTPUT_FOLDER_ID',\n  airtable_base_id:'appYOURBASEID0000', episode_id:'TEST-EP-20260911-01', clip_target_seconds:45, clip_min_seconds:30, clip_max_seconds:60,\n  source_public_url:'https://drive.usercontent.google.com/download?id=YOUR_DRIVE_FILE_ID&export=download&confirm=t',\n  assembly_event_id:'TEST-20260911-01|ASSEMBLYAI', openai_event_id:'TEST-20260911-01|OPENAI', shotstack_event_id:'TEST-20260911-01|SHOTSTACK',\n  assembly_estimate_usd:Number(((175.999/3600)*(0.21+0.02)).toFixed(4)), openai_reserved_usd:0.05, shotstack_max_usd:Number(((60/60)*0.30).toFixed(4)),\n  tables:{config:'tblYOURTABLE00007',episodes:'tblYOURTABLE00001',assets:'tblYOURTABLE00004',brand:'tblYOURTABLE00003',moments:'tblYOURTABLE00005',events:'tblYOURTABLE00002',reviews:'tblYOURTABLE00008'}\n};\nc.projected_cost_usd=Number((c.assembly_estimate_usd+c.openai_reserved_usd+c.shotstack_max_usd).toFixed(4));\nif(c.projected_cost_usd>c.cost_ceiling_usd) throw new Error('COST_CEILING_BLOCKED');\nif(!c.runtime_test_authorized||!c.test_mode||c.source_duration_seconds<120||c.source_duration_seconds>240) throw new Error('RUNTIME_TEST_CONTRACT_BLOCKED');\nreturn [{json:c}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000002",
+      "name": "Code - Define Approved Runtime Test Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00001"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.episode_id }}",
+            "episode_dedupe_key": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id }}",
+            "source_file_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.source_file_id }}",
+            "source_version": "TEST-v1",
+            "status": "TEST_RUNTIME_STARTED",
+            "last_completed_stage": "TEST_CONTRACT_ACCEPTED",
+            "allow_error_writes": "true",
+            "completion_recheck_required": "true"
+          },
+          "matchingColumns": [
+            "episode_id"
+          ],
+          "schema": [
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_dedupe_key",
+              "displayName": "episode_dedupe_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_file_id",
+              "displayName": "source_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_version",
+              "displayName": "source_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "allow_error_writes",
+              "displayName": "allow_error_writes",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "completion_recheck_required",
+              "displayName": "completion_recheck_required",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000003",
+      "name": "Airtable - Upsert TEST Episode Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        160
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+$('Code - Define Approved Runtime Test Contract').first().json.assembly_event_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000004",
+      "name": "Airtable - Reconcile AssemblyAI Paid Stage",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1024,
+        160
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst expected={event_id:c.assembly_event_id,stage:'TEST_ASSEMBLYAI',episode_id:c.episode_id,attempt_number:'1',payload_hash:c.test_run_id+'|'+c.source_file_id};\nconst rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length>1) throw new Error('DUPLICATE_ASSEMBLYAI_PAID_SUBMISSION_BLOCKED');\nif(rows.length===1){\n  const record=rows[0].json;\n  const fields=record.fields&&typeof record.fields==='object'?record.fields:record;\n  const identityMatches=fields.event_id===expected.event_id&&fields.stage===expected.stage&&fields.status==='SUBMITTED'&&fields.episode_id===expected.episode_id&&String(fields.attempt_number)===expected.attempt_number&&fields.payload_hash===expected.payload_hash&&fields.provider_job_id==='00000000-0000-0000-0000-000000000000';\n  if(!identityMatches) throw new Error('ASSEMBLYAI_EXISTING_SUBMISSION_IDENTITY_MISMATCH');\n  let prior;try{prior=JSON.parse(fields.result_json||'{}');}catch{throw new Error('ASSEMBLYAI_EXISTING_SUBMISSION_RESULT_INVALID');}\n  if(prior.test_mode!==true||Math.abs(Number(prior.projected_cost_usd)-Number(c.assembly_estimate_usd))>=0.000001) throw new Error('ASSEMBLYAI_EXISTING_SUBMISSION_RESULT_MISMATCH');\n  const e=prior.recovery_evidence||{};\n  const exact=record.id==='recYOURRECORDID01'&&record.createdTime==='2026-09-11T10:03:36.000Z'&&prior.resume_consumed===true&&Number(prior.resume_sequence)===3&&prior.resume_reason==='assemblyai_existing_job_execution_514'&&prior.provider_job_id==='00000000-0000-0000-0000-000000000000'&&prior.provider_status==='processing'&&prior.audio_url==='https://cdn.assemblyai.com/upload/5ddcdeb0b478ddc68d4d1ba6627e9d11bf344c9a14f9b48604422a5009ab570d/f943ad88-9cf5-478b-ba9c-b04a8b137e8c'&&e.execution_id==='514'&&e.submit_response_shape==='incoming_message_buffer_json'&&e.provider_job_id===prior.provider_job_id&&e.provider_status==='processing'&&e.audio_url===prior.audio_url&&e.upload_completed===true&&e.transcription_job_created===true&&e.no_resubmit===true;\n  if(!exact) throw new Error('DUPLICATE_ASSEMBLYAI_PAID_SUBMISSION_BLOCKED');\n  return [{json:{...expected,status:'SUBMITTED',result_json:fields.result_json,claim_record_id:record.id,resume_existing_claim:true,recover_existing_job:true,recovered_transcription_job_id:prior.provider_job_id}}];\n}\nreturn [{json:{...expected,status:'CLAIMED',result_json:JSON.stringify({projected_cost_usd:c.assembly_estimate_usd,test_mode:true}),resume_existing_claim:false,recover_existing_job:false}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000005",
+      "name": "Code - Refuse Duplicate AssemblyAI Submission And Build Claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{$json.event_id}}",
+            "stage": "={{$json.stage}}",
+            "status": "={{$json.status}}",
+            "episode_id": "={{$json.episode_id}}",
+            "attempt_number": "={{$json.attempt_number}}",
+            "payload_hash": "={{$json.payload_hash}}",
+            "result_json": "={{$json.result_json}}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000006",
+      "name": "Airtable - Write AssemblyAI Submission Claim",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        160
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+$('Code - Define Approved Runtime Test Contract').first().json.assembly_event_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000007",
+      "name": "Airtable - Verify Unique AssemblyAI Claim",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        160
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length!==1) throw new Error('ASSEMBLYAI_ATOMIC_CLAIM_MISSING');\nconst record=rows[0].json;\nconst fields=record.fields&&typeof record.fields==='object'?record.fields:record;\nconst expectedHash=c.test_run_id+'|'+c.source_file_id;\nconst baseIdentity=fields.event_id===c.assembly_event_id&&fields.stage==='TEST_ASSEMBLYAI'&&fields.episode_id===c.episode_id&&String(fields.attempt_number)==='1'&&fields.payload_hash===expectedHash;\nif(!baseIdentity) throw new Error('ASSEMBLYAI_ATOMIC_CLAIM_IDENTITY_MISMATCH');\nlet result;try{result=JSON.parse(fields.result_json||'{}');}catch{throw new Error('ASSEMBLYAI_ATOMIC_CLAIM_RESULT_INVALID');}\nif(result.test_mode!==true||Math.abs(Number(result.projected_cost_usd)-Number(c.assembly_estimate_usd))>=0.000001) throw new Error('ASSEMBLYAI_ATOMIC_CLAIM_RESULT_MISMATCH');\nconst e=result.recovery_evidence||{};\nconst recoverExisting=fields.status==='SUBMITTED'&&Number(result.resume_sequence)===3;\nif(recoverExisting){\n const exact=record.id==='recYOURRECORDID01'&&record.createdTime==='2026-09-11T10:03:36.000Z'&&fields.provider_job_id==='00000000-0000-0000-0000-000000000000'&&result.resume_consumed===true&&result.resume_reason==='assemblyai_existing_job_execution_514'&&result.provider_job_id===fields.provider_job_id&&result.provider_status==='processing'&&result.audio_url==='https://cdn.assemblyai.com/upload/5ddcdeb0b478ddc68d4d1ba6627e9d11bf344c9a14f9b48604422a5009ab570d/f943ad88-9cf5-478b-ba9c-b04a8b137e8c'&&e.execution_id==='514'&&e.submit_response_shape==='incoming_message_buffer_json'&&e.provider_job_id===result.provider_job_id&&e.provider_status==='processing'&&e.audio_url===result.audio_url&&e.upload_completed===true&&e.transcription_job_created===true&&e.no_resubmit===true;\n if(!exact) throw new Error('ASSEMBLYAI_514_RECOVERY_EVIDENCE_MISMATCH');\n}else if(fields.status!=='CLAIMED'||result.resume_sequence!==undefined){\n throw new Error('ASSEMBLYAI_ATOMIC_CLAIM_STATE_INVALID');\n}\nreturn [{json:{...c,claim_record_id:record.id,assembly_claim_resumed:recoverExisting,assembly_claim_resume_sequence:Number(result.resume_sequence||0),assembly_recover_existing_job:recoverExisting,recovered_transcription_job_id:recoverExisting?result.provider_job_id:null}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000008",
+      "name": "Code - Enforce Verified AssemblyAI Claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Define Approved Runtime Test Contract').first().json.source_file_id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000009",
+      "name": "Google Drive - Download Approved TEST Source",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2592,
+        160
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000010",
+      "name": "HTTP Request - Upload TEST Source Once To AssemblyAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        400
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ASSEMBLYAI_CREDENTIAL",
+          "name": "AssemblyAI API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; if(!r||typeof r.upload_url!=='string'||!r.upload_url.startsWith('https://')) throw new Error('ASSEMBLYAI_UPLOAD_RESPONSE_INVALID'); const c=$('Code - Define Approved Runtime Test Contract').first().json; return [{json:{...c,assembly_upload_url:r.upload_url,assembly_request:{audio_url:r.upload_url,speech_models:['universal-3-pro','universal-2'],language_detection:true,speaker_labels:true,punctuate:true,format_text:true}}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000011",
+      "name": "Code - Validate AssemblyAI Upload And Build One Transcript Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/transcript",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.assembly_request }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000012",
+      "name": "HTTP Request - Submit Exactly One AssemblyAI Transcription",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        768,
+        400
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ASSEMBLYAI_CREDENTIAL",
+          "name": "AssemblyAI API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=$input.first().json;\nfunction decode(value){\n if(value&&typeof value==='object'){\n  if(value.body&&typeof value.body==='object') return value.body;\n  if(typeof value.body==='string'){try{return JSON.parse(value.body);}catch{}}\n  const chunks=value?._readableState?.buffer;\n  if(Array.isArray(chunks)){\n   const bytes=chunks.flatMap(x=>Array.isArray(x?.data)?x.data:[]);\n   if(bytes.length){try{return JSON.parse(Buffer.from(bytes).toString('utf8'));}catch{}}\n  }\n }\n return value;\n}\nconst recovery=raw?.assembly_recover_existing_job===true;\nconst r=recovery?{id:raw.recovered_transcription_job_id,status:'processing'}:decode(raw);\nif(!r||typeof r.id!=='string'||!/^[0-9a-f-]{36}$/i.test(r.id)||!['queued','processing','completed'].includes(r.status)) throw new Error('ASSEMBLYAI_SUBMIT_AMBIGUOUS_HELD');\nif(recovery&&(r.id!=='00000000-0000-0000-0000-000000000000'||Number(raw.assembly_claim_resume_sequence)!==3)) throw new Error('ASSEMBLYAI_514_RECOVERY_JOB_MISMATCH');\nconst c=$('Code - Define Approved Runtime Test Contract').first().json;\nreturn [{json:{...c,transcription_job_id:r.id,assembly_submit_status:r.status,assembly_recovered_existing_job:recovery}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000013",
+      "name": "Code - Persistable AssemblyAI Job ID Before Waiting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.assembly_event_id }}",
+            "stage": "TEST_ASSEMBLYAI",
+            "status": "SUBMITTED",
+            "episode_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.episode_id }}",
+            "provider_job_id": "={{$json.transcription_job_id}}",
+            "attempt_number": "1",
+            "payload_hash": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id+'|'+$('Code - Define Approved Runtime Test Contract').first().json.source_file_id }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "provider_job_id",
+              "displayName": "provider_job_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000014",
+      "name": "Airtable - Save AssemblyAI Job ID Immediately",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const p=$('Code - Persistable AssemblyAI Job ID Before Waiting').first().json; return [{json:{...p,poll_attempt:0,poll_wait_seconds:10}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000015",
+      "name": "Code - Initialize Bounded AssemblyAI Poll",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "71000000-0000-4000-8000-000000000017",
+      "name": "Wait - Pause Before AssemblyAI Status Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1808,
+        400
+      ],
+      "webhookId": "71000000-0000-4000-8000-000000000016"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.assemblyai.com/v2/transcript/'+encodeURIComponent($json.transcription_job_id) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000018",
+      "name": "HTTP Request - Read AssemblyAI Transcript Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2064,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ASSEMBLYAI_CREDENTIAL",
+          "name": "AssemblyAI API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=$input.first().json; function decodeJsonResponse(value){if(value&&typeof value==='object'){if(value.body&&typeof value.body==='object')return value.body;if(typeof value.body==='string'){try{return JSON.parse(value.body);}catch{}}const chunks=value?._readableState?.buffer;if(Array.isArray(chunks)){const bytes=chunks.flatMap(x=>Array.isArray(x?.data)?x.data:[]);if(bytes.length){try{return JSON.parse(Buffer.from(bytes).toString('utf8'));}catch{}}}}return value;} const r=decodeJsonResponse(raw); const p=$('Wait - Pause Before AssemblyAI Status Check').item.json; const attempt=Number(p.poll_attempt||0)+1; if(r.status==='error') throw new Error('ASSEMBLYAI_TRANSCRIPT_FAILED'); if(r.status==='completed'){if(!r.text||!Array.isArray(r.words)||!r.words.length||!Array.isArray(r.utterances)||!r.utterances.length) throw new Error('ASSEMBLYAI_COMPLETED_CONTRACT_INVALID'); return [{json:{...p,poll_attempt:attempt,poll_again:false,transcript:r}}];} if(!['queued','processing'].includes(r.status)) throw new Error('ASSEMBLYAI_STATUS_UNKNOWN'); if(attempt>=30) throw new Error('ASSEMBLYAI_POLL_EXHAUSTED'); return [{json:{...p,poll_attempt:attempt,poll_again:true,poll_wait_seconds:10}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000019",
+      "name": "Code - Classify Bounded AssemblyAI Poll",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000020",
+              "leftValue": "={{$json.poll_again===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000021",
+      "name": "IF - Does AssemblyAI Need Another Poll?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ JSON.stringify($('Code - Classify Bounded AssemblyAI Poll').first().json.transcript) }}",
+        "name": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id+'-transcript.json' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_WORKING_FOLDER_ID"
+        },
+        "options": {
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "test_run_id",
+                "value": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id }}"
+              },
+              {
+                "key": "artifact_key",
+                "value": "transcript_json"
+              }
+            ]
+          },
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000022",
+      "name": "Google Drive - Save TEST Transcript Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        512,
+        640
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+$('Code - Define Approved Runtime Test Contract').first().json.openai_event_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000023",
+      "name": "Airtable - Reconcile OpenAI Paid Stage",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        640
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst expected={event_id:c.openai_event_id,stage:'TEST_OPENAI',status:'CLAIMED',episode_id:c.episode_id,attempt_number:'1',payload_hash:c.test_run_id+'|TRANSCRIPT'};\nconst rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length>1) throw new Error('DUPLICATE_OPENAI_PAID_SUBMISSION_BLOCKED');\nif(rows.length===1){\n const record=rows[0].json;\n const fields=record.fields&&typeof record.fields==='object'?record.fields:record;\n const identity=record.id==='recYOURRECORDID02'&&record.createdTime==='2026-09-11T16:22:42.000Z'&&fields.event_id===expected.event_id&&fields.stage===expected.stage&&fields.status===expected.status&&fields.episode_id===expected.episode_id&&String(fields.attempt_number)===expected.attempt_number&&fields.payload_hash===expected.payload_hash;\n if(!identity) throw new Error('OPENAI_EXISTING_CLAIM_IDENTITY_MISMATCH');\n let prior;try{prior=JSON.parse(fields.result_json||'{}');}catch{throw new Error('OPENAI_EXISTING_CLAIM_RESULT_INVALID');}\n if(prior.test_mode!==true||Math.abs(Number(prior.reserved_cost_usd)-Number(c.openai_reserved_usd))>=0.000001) throw new Error('OPENAI_EXISTING_CLAIM_RESULT_MISMATCH');\n const exactPartial=Buffer.from('REDACTED_TEST_FIXTURE','base64').toString('utf8');\n const baseline=Object.keys(prior).sort().join('|')==='reserved_cost_usd|test_mode';\n const e=prior.recovery_evidence||{};\n const marker=prior.recovery_consumed===true&&Number(prior.recovery_sequence)===1&&prior.recovery_reason==='openai_incomplete_max_output_tokens_execution_515'&&e.execution_id==='515'&&e.claim_record_id===record.id&&e.response_id==='resp_0171418a620d10b9016aa42ad43da487d2a4b42f6450779e32'&&e.response_status==='incomplete'&&e.incomplete_reason==='max_output_tokens'&&e.model==='gpt-5-mini-2025-08-07'&&Number(e.max_output_tokens)===1200&&Number(e.input_tokens)===29403&&Number(e.output_tokens)===1200&&Number(e.reasoning_tokens)===896&&e.assembly_job_id==='00000000-0000-0000-0000-000000000000'&&e.partial_output_text===exactPartial&&e.completed_cta==='Listen to the full episode of Huge If True for the complete demo and context.'&&Number(e.context_risk)===0.2&&e.no_openai_resubmit===true;\n if(!baseline&&!marker) throw new Error('DUPLICATE_OPENAI_PAID_SUBMISSION_BLOCKED');\n const recovery=marker?e:{execution_id:'515',claim_record_id:record.id,response_id:'resp_0171418a620d10b9016aa42ad43da487d2a4b42f6450779e32',response_status:'incomplete',incomplete_reason:'max_output_tokens',model:'gpt-5-mini-2025-08-07',max_output_tokens:1200,input_tokens:29403,output_tokens:1200,reasoning_tokens:896,assembly_job_id:'00000000-0000-0000-0000-000000000000',partial_output_text:exactPartial,completed_cta:'Listen to the full episode of Huge If True for the complete demo and context.',context_risk:0.2,no_openai_resubmit:true};\n const result={reserved_cost_usd:c.openai_reserved_usd,test_mode:true,recovery_consumed:true,recovery_sequence:1,recovery_reason:'openai_incomplete_max_output_tokens_execution_515',recovery_evidence:recovery};\n return [{json:{...expected,result_json:JSON.stringify(result),openai_recover_partial_response:true,openai_recovery_reused:marker,openai_claim_record_id:record.id}}];\n}\nreturn [{json:{...expected,result_json:JSON.stringify({reserved_cost_usd:c.openai_reserved_usd,test_mode:true}),openai_recover_partial_response:false}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000024",
+      "name": "Code - Refuse Duplicate OpenAI Submission And Build Claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{$json.event_id}}",
+            "stage": "={{$json.stage}}",
+            "status": "={{$json.status}}",
+            "episode_id": "={{$json.episode_id}}",
+            "attempt_number": "={{$json.attempt_number}}",
+            "payload_hash": "={{$json.payload_hash}}",
+            "result_json": "={{$json.result_json}}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000025",
+      "name": "Airtable - Write OpenAI Submission Claim",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        640
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+$('Code - Define Approved Runtime Test Contract').first().json.openai_event_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000026",
+      "name": "Airtable - Verify Unique OpenAI Claim",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        640
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length!==1) throw new Error('OPENAI_ATOMIC_CLAIM_MISSING');\nconst record=rows[0].json;\nconst fields=record.fields&&typeof record.fields==='object'?record.fields:record;\nconst expectedHash=c.test_run_id+'|TRANSCRIPT';\nconst identity=fields.event_id===c.openai_event_id&&fields.stage==='TEST_OPENAI'&&fields.status==='CLAIMED'&&fields.episode_id===c.episode_id&&String(fields.attempt_number)==='1'&&fields.payload_hash===expectedHash;\nif(!identity) throw new Error('OPENAI_ATOMIC_CLAIM_IDENTITY_MISMATCH');\nlet claimResult;try{claimResult=JSON.parse(fields.result_json||'{}');}catch{throw new Error('OPENAI_ATOMIC_CLAIM_RESULT_INVALID');}\nif(claimResult.test_mode!==true||Math.abs(Number(claimResult.reserved_cost_usd)-Number(c.openai_reserved_usd))>=0.000001) throw new Error('OPENAI_ATOMIC_CLAIM_RESULT_MISMATCH');\nconst t=$('Code - Classify Bounded AssemblyAI Poll').first().json.transcript;\nconst e=claimResult.recovery_evidence||{};\nconst exactPartial=Buffer.from('REDACTED_TEST_FIXTURE','base64').toString('utf8');\nconst recover=claimResult.recovery_consumed===true&&Number(claimResult.recovery_sequence)===1;\nif(recover){\n const exact=record.id==='recYOURRECORDID02'&&record.createdTime==='2026-09-11T16:22:42.000Z'&&claimResult.recovery_reason==='openai_incomplete_max_output_tokens_execution_515'&&e.execution_id==='515'&&e.claim_record_id===record.id&&e.response_id==='resp_0171418a620d10b9016aa42ad43da487d2a4b42f6450779e32'&&e.response_status==='incomplete'&&e.incomplete_reason==='max_output_tokens'&&e.model==='gpt-5-mini-2025-08-07'&&Number(e.max_output_tokens)===1200&&Number(e.input_tokens)===29403&&Number(e.output_tokens)===1200&&Number(e.reasoning_tokens)===896&&e.assembly_job_id==='00000000-0000-0000-0000-000000000000'&&e.partial_output_text===exactPartial&&e.completed_cta==='Listen to the full episode of Huge If True for the complete demo and context.'&&Number(e.context_risk)===0.2&&e.no_openai_resubmit===true&&t.id===e.assembly_job_id&&t.status==='completed';\n if(!exact) throw new Error('OPENAI_515_RECOVERY_EVIDENCE_MISMATCH');\n return [{json:{...c,openai_claim_record_id:record.id,openai_recover_partial_response:true,openai_recovery:e}}];\n}\nif(claimResult.recovery_sequence!==undefined) throw new Error('OPENAI_CLAIM_STATE_INVALID');\nconst evidence={duration_seconds:t.audio_duration,words:(t.words||[]).map(w=>({text:w.text,start:Number(w.start),end:Number(w.end),speaker:String(w.speaker||'')}))};\nconst schema={type:'object',additionalProperties:false,properties:{start_ms:{type:'integer'},end_ms:{type:'integer'},speaker:{type:'string'},source_excerpt:{type:'string'},selection_reason:{type:'string'},hook:{type:'string'},social_caption:{type:'string'},cta:{type:'string'},context_risk:{type:'number'}},required:['start_ms','end_ms','speaker','source_excerpt','selection_reason','hook','social_caption','cta','context_risk']};\nconst developer='Select exactly one complete podcast moment lasting 30 to 60 seconds and target 45 seconds. Boundaries must exactly match supplied word start and end milliseconds. Prefer one coherent speaker turn. Build source_excerpt only by joining the selected words in order. Do not invent facts. Write a short hook, social caption, and CTA. context_risk must be a number from 0 to 1.';\nreturn [{json:{...c,openai_claim_record_id:record.id,openai_recover_partial_response:false,openai_request:{model:'gpt-5-mini',reasoning:{effort:'low'},input:[{role:'developer',content:[{type:'input_text',text:developer}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(evidence)}]}],text:{verbosity:'low',format:{type:'json_schema',name:'podcast_test_moment_v1',strict:true,schema}},max_output_tokens:2400,store:false}}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000027",
+      "name": "Code - Enforce OpenAI Claim And Build Strict One-Call Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.openai_request }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000028",
+      "name": "HTTP Request - Make One Short GPT-5-Mini Responses Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2320,
+        768
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=$input.first().json; function decodeJsonResponse(value){if(value&&typeof value==='object'){if(value.body&&typeof value.body==='object')return value.body;if(typeof value.body==='string'){try{return JSON.parse(value.body);}catch{}}const chunks=value?._readableState?.buffer;if(Array.isArray(chunks)){const bytes=chunks.flatMap(x=>Array.isArray(x?.data)?x.data:[]);if(bytes.length){try{return JSON.parse(Buffer.from(bytes).toString('utf8'));}catch{}}}}return value;} const r=decodeJsonResponse(raw); if(r.status!=='completed') throw new Error('OPENAI_RESPONSE_NOT_COMPLETED'); const msg=(r.output||[]).find(x=>x.type==='message'&&x.status==='completed'); const cpart=(msg?.content||[]).find(x=>x.type==='output_text'); if(!cpart?.text) throw new Error('OPENAI_OUTPUT_TEXT_MISSING'); let o; try{o=JSON.parse(cpart.text);}catch(e){throw new Error('OPENAI_OUTPUT_JSON_INVALID');} const keys=['start_ms','end_ms','speaker','source_excerpt','selection_reason','hook','social_caption','cta','context_risk']; if(Object.keys(o).sort().join('|')!==[...keys].sort().join('|')) throw new Error('OPENAI_SCHEMA_KEYS_INVALID'); const stringKeys=['speaker','source_excerpt','selection_reason','hook','social_caption','cta']; if(!Number.isInteger(o.start_ms)||!Number.isInteger(o.end_ms)||!stringKeys.every(k=>typeof o[k]==='string'&&o[k].trim())||typeof o.context_risk!=='number'||o.context_risk<0||o.context_risk>1) throw new Error('OPENAI_SCHEMA_TYPES_INVALID');\nconst d0=(o.end_ms-o.start_ms)/1000; if(d0<30||d0>60) throw new Error('MOMENT_DURATION_OUT_OF_BOUNDS');\nconst c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst t=$('Code - Classify Bounded AssemblyAI Poll').first().json.transcript; const all=t.words;\nconst LEAD_PAD_MS=120,PREV_WORD_GUARD_MS=40,TAIL_PAD_MS=400,NEXT_WORD_GUARD_MS=250,END_OF_MEDIA_GUARD_MS=100,MAX_EXTEND_MS=6000,MAX_FINAL_DURATION_MS=59000,GAP_MS=40,LONG_WORD_MS=900,MAX_END_TRIM_MS=120,MIN_END_SILENCE_MS=350,MIN_WORD_STEP_MS=120;\nconst idxs=[]; for(let i=0;i<all.length;i++){ if(Number(all[i].start)>=o.start_ms&&Number(all[i].end)<=o.end_ms) idxs.push(i); }\nif(!idxs.length) throw new Error('MOMENT_WORD_EVIDENCE_MISSING');\nconst firstIdx=idxs[0], lastIdx=idxs[idxs.length-1];\nif(lastIdx-firstIdx!==idxs.length-1) throw new Error('MOMENT_WORD_INDEX_RANGE_INVALID');\nif(Math.abs(Number(all[firstIdx].start)-o.start_ms)>100||Math.abs(Number(all[lastIdx].end)-o.end_ms)>100) throw new Error('MOMENT_BOUNDARY_NOT_WORD_ALIGNED');\nconst ABBR=['mr','mrs','ms','dr','prof','st','sr','jr','vs','etc','no','inc','ltd','co','u.s','e.g','i.e'];\nconst stripClose=s=>String(s==null?'':s).replace(/[\"'’”\\)\\]\\}]+$/,'');\nconst stripOpen=s=>String(s==null?'':s).replace(/^[\"'‘“\\(\\[\\{]+/,'');\nconst isSentenceEnd=i=>{const w=all[i]; if(!w) return false; const core0=stripClose(w.text); if(!core0) return false; const term=core0.charAt(core0.length-1); if('.!?…'.indexOf(term)<0) return false; const core=core0.slice(0,-1); if(core.length<2) return false; if(ABBR.indexOf(core.toLowerCase())>=0) return false; if(term==='.'){const nx=all[i+1]; if(!nx) return true; const ch=stripOpen(nx.text).charAt(0); if(!/[A-Z0-9]/.test(ch)) return false;} return true;};\nconst firstWordStart=Number(all[firstIdx].start);\nconst prevEnd=firstIdx>0?Number(all[firstIdx-1].end):null;\nlet lead=LEAD_PAD_MS; if(prevEnd!==null) lead=Math.min(lead,firstWordStart-prevEnd-PREV_WORD_GUARD_MS); lead=Math.min(lead,firstWordStart); lead=Math.floor(lead); if(!(lead>0)) lead=0; const lead_pad_clamped=lead<LEAD_PAD_MS;\nlet clipStart=firstWordStart-lead;\nconst budgetMs=Math.max(o.end_ms-o.start_ms,MAX_FINAL_DURATION_MS);\nconst srcSeconds=Number(c.source_duration_seconds); const srcMs=Number.isFinite(srcSeconds)&&srcSeconds>0?srcSeconds*1000:Infinity;\nconst SOURCE_DURATION_TOLERANCE_MS=1000; if(Number.isFinite(srcMs)){const transcriptEndMs=all.reduce((m,w)=>{const e=Number(w.end); return Number.isFinite(e)&&e>m?e:m;},0); if(transcriptEndMs>srcMs+SOURCE_DURATION_TOLERANCE_MS) throw new Error('MOMENT_SOURCE_DURATION_CONTRACT_STALE');}\nconst silenceAfter=i=>{const nx=all[i+1];return nx?Number(nx.start)-Number(all[i].end):Infinity;};\nconst isGoodEnd=i=>isSentenceEnd(i)&&silenceAfter(i)>=MIN_END_SILENCE_MS;\nlet endIdx=lastIdx, mode='already_sentence_end';\nif(!isGoodEnd(lastIdx)){\n  const baseEnd=Number(all[lastIdx].end); const spk=String(all[lastIdx].speaker); let found=-1; let fallbackSentence=-1; let stop='fallback_transcript_end';\n  for(let j=lastIdx+1;j<all.length;j++){\n    if(String(all[j].speaker)!==spk){stop='fallback_speaker_change';break;}\n    const we=Number(all[j].end);\n    if(we-baseEnd>MAX_EXTEND_MS){stop='fallback_no_sentence_end_within_horizon';break;}\n    if(we+TAIL_PAD_MS-clipStart>budgetMs){stop='fallback_duration_ceiling';break;}\n    if(isGoodEnd(j)){found=j;break;}if(isSentenceEnd(j)&&fallbackSentence<0)fallbackSentence=j;\n  }\n  if(found>=0){endIdx=found;mode='sentence_snap';} else if(fallbackSentence>=0){endIdx=fallbackSentence;mode='sentence_snap_tight_silence';} else if(isSentenceEnd(lastIdx)){endIdx=lastIdx;mode='already_sentence_end_tight_silence';} else {endIdx=lastIdx;mode=stop;}\n}\nconst finalLastWordEnd=Number(all[endIdx].end);\nconst words=all.filter(w=>Number(w.start)>=o.start_ms&&Number(w.end)<=finalLastWordEnd);\nif(!words.length||words.length<idxs.length||words[0]!==all[firstIdx]) throw new Error('MOMENT_SENTENCE_SNAP_WORDS_MISSING');\nconst nextStart=endIdx+1<all.length?Number(all[endIdx+1].start):Infinity;\nlet tail=TAIL_PAD_MS; if(Number.isFinite(nextStart)) tail=Math.min(tail,nextStart-finalLastWordEnd-NEXT_WORD_GUARD_MS); if(Number.isFinite(srcMs)) tail=Math.min(tail,srcMs-finalLastWordEnd-END_OF_MEDIA_GUARD_MS); tail=Math.floor(tail); if(!Number.isFinite(tail)) tail=0; tail=Math.max(tail,-MAX_END_TRIM_MS); const lastWordStart=Number(all[endIdx].start); if(finalLastWordEnd+tail<=lastWordStart) tail=lastWordStart-finalLastWordEnd+1; const tail_pad_clamped=tail<TAIL_PAD_MS;\nlet clipEnd=finalLastWordEnd+tail;\nif(clipEnd-clipStart>budgetMs){const cut=Math.min(lead,clipEnd-clipStart-budgetMs);lead-=cut;clipStart=firstWordStart-lead;}\nif(clipEnd-clipStart>budgetMs){const cut=Math.min(tail,clipEnd-clipStart-budgetMs);tail-=cut;clipEnd=finalLastWordEnd+tail;}\nif(clipEnd-clipStart>budgetMs) throw new Error('MOMENT_FINAL_DURATION_EXCEEDS_CEILING');\nif(!(clipStart>=0)||!(clipEnd>clipStart)||clipStart>firstWordStart||clipEnd<finalLastWordEnd-MAX_END_TRIM_MS||clipEnd<=Number(all[endIdx].start)) throw new Error('MOMENT_CLIP_BOUNDS_INVALID');\nconst d=(clipEnd-clipStart)/1000;\nconst source_excerpt_final=words.map(w=>w.text).join(' ');\nconst ending={mode,lead_pad_ms:lead,tail_pad_ms:tail,lead_pad_clamped,tail_pad_clamped,extended_by_ms:finalLastWordEnd-Number(all[lastIdx].end),words_added:words.length-idxs.length,final_last_word_text:all[endIdx].text};\nconst fmt=ms=>{const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000),x=Math.floor(ms%1000);return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':')+'.'+String(x).padStart(3,'0')};\nconst chunks=[];{let cur=[];for(let i=0;i<words.length;i++){if(cur.length&&(cur.length>=4||Number(cur[cur.length-1].end)-Number(cur[cur.length-1].start)>=LONG_WORD_MS)){chunks.push(cur);cur=[];}cur.push(words[i]);}if(cur.length)chunks.push(cur);}const groups=chunks.map(g=>({index:0,start_ms:Number(g[0].start)-clipStart,end_ms:Number(g.at(-1).end)-clipStart,text:g.map(w=>w.text).join(' '),words:g.map(w=>({text:w.text,start_ms:Number(w.start)-clipStart,end_ms:Number(w.end)-clipStart,speaker:w.speaker,confidence:w.confidence}))}));groups.forEach((g,i)=>{g.index=i+1;});\nif(groups.some(g=>g.text.trim().split(/\\s+/).length>4||g.start_ms<0||g.end_ms<=g.start_ms||g.end_ms>d*1000+100)) throw new Error('VTT_CAPTION_CONTRACT_INVALID');\nconst displayEnds=groups.map((g,i)=>{if(i===groups.length-1)return g.end_ms;const nextGroupStart=groups[i+1].start_ms;let end=Math.min(g.end_ms,nextGroupStart-GAP_MS);if(end<=g.start_ms)end=Math.min(g.end_ms,nextGroupStart-1);if(end<=g.start_ms)throw new Error('VTT_CUE_GAP_COLLAPSE');return end;});\nconst cueText=(g,dispEnd)=>{const n=g.words.length;const parts=[g.words[0].text];if(n===1)return parts[0];const span=dispEnd-1-g.start_ms;const need=(n-1)*MIN_WORD_STEP_MS;const even=span<need;let prev=g.start_ms;for(let k=1;k<n;k++){let t;if(even){t=g.start_ms+Math.round(span*k/(n-1+0.0001));}else{t=Math.max(Number(g.words[k].start_ms),prev+MIN_WORD_STEP_MS);}t=Math.min(t,dispEnd-1);if(t<=prev)t=prev+1;prev=t;parts.push('<'+fmt(t)+'>'+g.words[k].text);}if(prev>=dispEnd) throw new Error('VTT_INLINE_TIMESTAMP_OUTSIDE_CUE');return parts.join(' ');};\nconst vtt='WEBVTT\\n\\n'+groups.map((g,i)=>g.index+'\\n'+fmt(g.start_ms)+' --> '+fmt(displayEnds[i])+'\\n'+cueText(g,displayEnds[i])).join('\\n\\n')+'\\n';\nconst moment_id=c.test_run_id+'|MOMENT-01'; const asset_id=c.test_run_id+'|ASSET-01';\nconst shotstack_request={timeline:{tracks:[{clips:[{asset:{type:'text',text:'TEST',width:220,height:80,background:{color:'#ff0000',opacity:0.6,padding:8,borderRadius:6},font:{family:'Open Sans',color:'#ffffff',size:24},alignment:{horizontal:'center',vertical:'center'}},start:0,length:d,width:220,height:80,position:'topRight',offset:{x:-0.05,y:-0.04}}]},{clips:[{asset:{type:'rich-caption',src:'pending://captions_vtt_public_url',font:{family:'Arial',size:60,color:'#ffffff',weight:900},stroke:{width:6,color:'#000000',opacity:1},shadow:{offsetX:0,offsetY:2,blur:3,color:'#000000',opacity:0.6},animation:{style:'highlight'},active:{font:{color:'#FFD400',opacity:1}}},start:0,length:'end',width:980,height:360,position:'bottom',offset:{x:0,y:0.12}}]},{clips:[{alias:'source',asset:{type:'video',src:c.source_public_url,trim:clipStart/1000,volumeEffect:'fadeOut'},start:0,length:d,fit:'crop',transition:{out:'fadeFast'}}]}]},output:{format:'mp4',size:{width:1080,height:1920},mute:false}};\nreturn [{json:{...c,transcription_job_id:$('Code - Persistable AssemblyAI Job ID Before Waiting').first().json.transcription_job_id,openai_response_id:r.id,openai_model:r.model,openai_usage:r.usage||{},moment:{...o,source_excerpt:source_excerpt_final,moment_id,start_ms:clipStart,end_ms:clipEnd,duration_seconds:d,model_proposed_start_ms:o.start_ms,model_proposed_end_ms:o.end_ms,model_proposed_duration_seconds:d0,ending,words,caption_groups:groups},moment_id,asset_id,asset_version:'1',asset_version_key:asset_id+'|1',render_key:c.test_run_id+'|RENDER-08',vtt,shotstack_request,selection_json:JSON.stringify({test_mode:true,moment:{...o,source_excerpt:source_excerpt_final,moment_id,start_ms:clipStart,end_ms:clipEnd,duration_seconds:d,model_proposed_start_ms:o.start_ms,model_proposed_end_ms:o.end_ms,model_proposed_duration_seconds:d0,ending},copy:{hook:o.hook,social_caption:o.social_caption,cta:o.cta},caption_groups:groups,openai:{id:r.id,model:r.model,usage:r.usage||{}}},null,2)}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000029",
+      "name": "Code - Parse Validate Moment Copy And Build VTT Render Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00005"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "moment_id": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment_id }}",
+            "episode_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.episode_id }}",
+            "source_start_ms": "={{ String($('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.start_ms) }}",
+            "source_end_ms": "={{ String($('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.end_ms) }}",
+            "source_excerpt": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.source_excerpt }}",
+            "status": "TEST_SELECTED",
+            "speaker": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.speaker }}",
+            "angle": "TEST_AUTO_SELECTED",
+            "scores_json": "={{ JSON.stringify({target_closeness:Math.max(0,1-Math.abs($('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.duration_seconds-45)/15)}) }}",
+            "context_risk": "={{ String($('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.context_risk) }}",
+            "words_json": "={{ JSON.stringify($('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.words) }}",
+            "evidence_text": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.source_excerpt }}",
+            "selection_reason": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.selection_reason }}",
+            "requires_context_review": "={{ String($('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment.context_risk>=0.5) }}"
+          },
+          "matchingColumns": [
+            "moment_id"
+          ],
+          "schema": [
+            {
+              "id": "moment_id",
+              "displayName": "moment_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_start_ms",
+              "displayName": "source_start_ms",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_end_ms",
+              "displayName": "source_end_ms",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_excerpt",
+              "displayName": "source_excerpt",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "speaker",
+              "displayName": "speaker",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "angle",
+              "displayName": "angle",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scores_json",
+              "displayName": "scores_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "context_risk",
+              "displayName": "context_risk",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "words_json",
+              "displayName": "words_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "evidence_text",
+              "displayName": "evidence_text",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "selection_reason",
+              "displayName": "selection_reason",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_context_review",
+              "displayName": "requires_context_review",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000030",
+      "name": "Airtable - Upsert TEST Selected Moment",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        880
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.selection_json }}",
+        "name": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id+'-moment-copy.json' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_WORKING_FOLDER_ID"
+        },
+        "options": {
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "test_run_id",
+                "value": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id }}"
+              },
+              {
+                "key": "artifact_key",
+                "value": "moment_copy_json"
+              }
+            ]
+          },
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000031",
+      "name": "Google Drive - Save TEST Moment And Copy Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        512,
+        880
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.vtt }}",
+        "name": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id+'-captions-'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+'.vtt' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_WORKING_FOLDER_ID"
+        },
+        "options": {
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "test_run_id",
+                "value": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id }}"
+              },
+              {
+                "key": "artifact_key",
+                "value": "={{ 'captions_vtt_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1] }}"
+              }
+            ]
+          },
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000032",
+      "name": "Google Drive - Save TEST Validated VTT Manifest",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        768,
+        880
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.shotstack.io/edit/stage/probe/'+encodeURIComponent($('Code - Define Approved Runtime Test Contract').first().json.source_public_url) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000033",
+      "name": "HTTP Request - Probe Public TEST Source Before Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1024,
+        880
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const m=r?.response?.metadata; const streams=m?.streams||[]; if(r?.success!==true||!m||!streams.some(s=>s.codec_type==='video')||!streams.some(s=>s.codec_type==='audio')) throw new Error('SHOTSTACK_SOURCE_MEDIA_URL_INACCESSIBLE'); return [{json:{source_probe_ok:true}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000034",
+      "name": "Code - Fail Closed If Shotstack Cannot Access Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+$('Code - Define Approved Runtime Test Contract').first().json.shotstack_event_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000035",
+      "name": "Airtable - Reconcile Shotstack Paid Stage",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        880
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst p=$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json;\nconst rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length>1) throw new Error('DUPLICATE_SHOTSTACK_PAID_SUBMISSION_BLOCKED');\nconst projected=Number((c.assembly_estimate_usd+c.openai_reserved_usd+(p.moment.duration_seconds/60*0.30)).toFixed(4));\nif(projected>c.cost_ceiling_usd) throw new Error('PROJECTED_AGGREGATE_COST_EXCEEDS_USD_0_50');\nconst RETIRED_RENDER_KEYS={};RETIRED_RENDER_KEYS[c.test_run_id+'|RENDER-01']={provider_job_id:'71e3570c-aad7-44a3-b505-9887c838cabe',resolved_reason:'shotstack_render_completed_with_visual_defects_see_render_defects_519_report'};RETIRED_RENDER_KEYS[c.test_run_id+'|RENDER-02']={provider_job_id:'8c922f68-de69-4d79-ae81-d626bee7bf80',resolved_reason:'shotstack_render_completed_but_picture_stretched_caption_highlight_early_and_reel_never_reached_drive_see_execution_525'};RETIRED_RENDER_KEYS[c.test_run_id+'|RENDER-03']={provider_job_id:'bcd8479f-d792-48b4-b48c-f46017430607',resolved_reason:'shotstack_render_correct_but_ending_caught_next_speaker_syllable_and_highlight_lingered_through_silences_see_execution_528'};RETIRED_RENDER_KEYS[c.test_run_id+'|RENDER-04']={provider_job_id:'a32832d9-5fbb-4e60-ae52-5af68891107a',resolved_reason:'ending_and_font_correct_but_render_reused_stale_captions_vtt_v4_from_execution_528_so_the_pause_splitting_never_reached_the_video'};RETIRED_RENDER_KEYS[c.test_run_id+'|RENDER-05']={provider_job_id:'ee276c37-ba77-4345-8a86-ea2b41de4270',resolved_reason:'pause_splitting_left_captions_blank_for_over_a_second_and_zero_tail_made_the_ending_stop_dead_see_execution_530'};\nif(Object.prototype.hasOwnProperty.call(RETIRED_RENDER_KEYS,p.render_key)) throw new Error('DUPLICATE_SHOTSTACK_PAID_SUBMISSION_BLOCKED');\nif(rows.length===1){\n  const record=rows[0].json;\n  const fields=record.fields&&typeof record.fields==='object'?record.fields:record;\n  const hasRenderId=typeof fields.provider_job_id==='string'&&fields.provider_job_id.length>0;\n  const sameKeyAsOnFile=fields.payload_hash===p.render_key;\n  if(sameKeyAsOnFile){\n  if(hasRenderId) throw new Error('DUPLICATE_SHOTSTACK_PAID_SUBMISSION_BLOCKED');\n  let prior;try{prior=JSON.parse(fields.result_json||'{}');}catch{throw new Error('SHOTSTACK_EXISTING_CLAIM_RESULT_INVALID');}\n  const priorAttempt=String(fields.attempt_number||'');\n  const priorMarkedFailed=fields.status==='FAILED_NO_RENDER_ID'&&fields.episode_id===c.episode_id&&fields.asset_id===p.asset_id&&fields.payload_hash===p.render_key&&priorAttempt==='1'&&prior.test_mode===true&&(prior.shotstack_render_id_returned===false||(prior.prior_attempt&&prior.prior_attempt.shotstack_render_id_returned===false));\n  if(!priorMarkedFailed) throw new Error('DUPLICATE_SHOTSTACK_PAID_SUBMISSION_BLOCKED');\n  return [{json:{event_id:c.shotstack_event_id,stage:'TEST_SHOTSTACK',status:'CLAIMED',episode_id:c.episode_id,asset_id:p.asset_id,asset_version:'1',attempt_number:'2',payload_hash:p.render_key,result_json:JSON.stringify({projected_aggregate_cost_usd:projected,test_mode:true,prior_attempt:{attempt_number:1,resolved_status:'FAILED_NO_RENDER_ID',shotstack_render_id_returned:false}})}}];\n  }\n  if(!hasRenderId) throw new Error('DUPLICATE_SHOTSTACK_PAID_SUBMISSION_BLOCKED');\n  return [{json:{event_id:c.shotstack_event_id,stage:'TEST_SHOTSTACK',status:'CLAIMED',episode_id:c.episode_id,asset_id:p.asset_id,asset_version:'1',attempt_number:'1',payload_hash:p.render_key,result_json:JSON.stringify({projected_aggregate_cost_usd:projected,test_mode:true,superseded_prior_render:{payload_hash:fields.payload_hash,provider_job_id:fields.provider_job_id,reason:'corrected_render_after_visual_defects_see_render_defects_519_report'}})}}];\n}\nreturn [{json:{event_id:c.shotstack_event_id,stage:'TEST_SHOTSTACK',status:'CLAIMED',episode_id:c.episode_id,asset_id:p.asset_id,asset_version:'1',attempt_number:'1',payload_hash:p.render_key,result_json:JSON.stringify({projected_aggregate_cost_usd:projected,test_mode:true})}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000036",
+      "name": "Code - Refuse Duplicate Shotstack Submission And Build Claim",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{$json.event_id}}",
+            "stage": "={{$json.stage}}",
+            "status": "={{$json.status}}",
+            "episode_id": "={{$json.episode_id}}",
+            "asset_id": "={{$json.asset_id}}",
+            "asset_version": "={{$json.asset_version}}",
+            "attempt_number": "={{$json.attempt_number}}",
+            "payload_hash": "={{$json.payload_hash}}",
+            "result_json": "={{$json.result_json}}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000037",
+      "name": "Airtable - Write Shotstack Submission Claim",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        880
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+$('Code - Define Approved Runtime Test Contract').first().json.shotstack_event_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 2,
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000038",
+      "name": "Airtable - Verify Unique Shotstack Claim",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2320,
+        912
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c=$('Code - Define Approved Runtime Test Contract').first().json;\nconst p=$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json;\nconst rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length!==1) throw new Error('SHOTSTACK_ATOMIC_CLAIM_MISSING');\nconst record=rows[0].json;\nconst fields=record.fields&&typeof record.fields==='object'?record.fields:record;\nconst expectedAttempt=String($('Code - Refuse Duplicate Shotstack Submission And Build Claim').first().json.attempt_number);\nif(!['1','2'].includes(expectedAttempt)) throw new Error('SHOTSTACK_ATOMIC_CLAIM_ATTEMPT_NUMBER_INVALID');\nconst identityMatches=\n  fields.event_id===c.shotstack_event_id &&\n  fields.stage==='TEST_SHOTSTACK' &&\n  fields.status==='CLAIMED' &&\n  fields.episode_id===c.episode_id &&\n  fields.asset_id===p.asset_id &&\n  String(fields.asset_version)==='1' &&\n  String(fields.attempt_number)===expectedAttempt &&\n  fields.payload_hash===p.render_key;\nif(!identityMatches) throw new Error('SHOTSTACK_ATOMIC_CLAIM_IDENTITY_MISMATCH');\nconst projected=Number((c.assembly_estimate_usd+c.openai_reserved_usd+(p.moment.duration_seconds/60*0.30)).toFixed(4));\nif(projected>c.cost_ceiling_usd||projected>0.50) throw new Error('PROJECTED_AGGREGATE_COST_EXCEEDS_USD_0_50');\nlet claimResult;\ntry{claimResult=JSON.parse(fields.result_json||'{}');}catch{throw new Error('SHOTSTACK_ATOMIC_CLAIM_RESULT_INVALID');}\nconst costMatches=Math.abs(Number(claimResult.projected_aggregate_cost_usd)-projected)<0.000001;\nif(claimResult.test_mode!==true||!costMatches) throw new Error('SHOTSTACK_ATOMIC_CLAIM_RESULT_MISMATCH');\nconst vttFileId=$('Code - Reconcile TEST Validated VTT Manifest').first().json.id;\nif(typeof vttFileId!=='string'||!vttFileId) throw new Error('SHOTSTACK_VTT_FILE_ID_MISSING');\nconst vttPublicUrl='https://drive.usercontent.google.com/download?id='+vttFileId+'&export=download&confirm=t';\nconst shotstack_request=JSON.parse(JSON.stringify(p.shotstack_request));\nconst captionClip=shotstack_request?.timeline?.tracks?.[1]?.clips?.[0];\nif(!captionClip||captionClip.asset?.type!=='rich-caption') throw new Error('SHOTSTACK_CAPTION_CLIP_STRUCTURE_UNEXPECTED');\ncaptionClip.asset.src=vttPublicUrl;\nreturn [{json:{...p,shotstack_request,shotstack_vtt_public_url:vttPublicUrl,shotstack_claim_record_id:record.id,projected_aggregate_cost_usd:projected,shotstack_attempt_number:expectedAttempt}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000039",
+      "name": "Code - Enforce Shotstack Claim And Cost Ceiling",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/edit/stage/render",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.shotstack_request }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000040",
+      "name": "HTTP Request - Submit Exactly One TEST Shotstack Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        512,
+        1120
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=$input.first().json; function decodeJsonResponse(value){if(value&&typeof value==='object'){if(value.body&&typeof value.body==='object')return value.body;if(typeof value.body==='string'){try{return JSON.parse(value.body);}catch{}}const chunks=value?._readableState?.buffer;if(Array.isArray(chunks)){const bytes=chunks.flatMap(x=>Array.isArray(x?.data)?x.data:[]);if(bytes.length){try{return JSON.parse(Buffer.from(bytes).toString('utf8'));}catch{}}}}return value;} const r=decodeJsonResponse(raw); const jid=r?.response?.id; if(r?.success!==true||typeof jid!=='string'||!jid) throw new Error('SHOTSTACK_SUBMIT_AMBIGUOUS_HELD'); const p=$('Code - Enforce Shotstack Claim And Cost Ceiling').first().json; return [{json:{...p,render_job_id:jid}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000041",
+      "name": "Code - Persistable Shotstack Job ID Before Waiting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.shotstack_event_id }}",
+            "stage": "TEST_SHOTSTACK",
+            "status": "SUBMITTED",
+            "episode_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.episode_id }}",
+            "asset_id": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.asset_id }}",
+            "asset_version": "1",
+            "provider_job_id": "={{$json.render_job_id}}",
+            "attempt_number": "={{ $('Code - Enforce Shotstack Claim And Cost Ceiling').first().json.shotstack_attempt_number }}",
+            "payload_hash": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "provider_job_id",
+              "displayName": "provider_job_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000042",
+      "name": "Airtable - Save Shotstack Job ID Immediately",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1024,
+        1120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const p=$('Code - Persistable Shotstack Job ID Before Waiting').first().json; return [{json:{...p,poll_attempt:0,poll_elapsed_seconds:0,poll_wait_seconds:10}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000043",
+      "name": "Code - Initialize Bounded Shotstack Poll",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.poll_wait_seconds }}"
+      },
+      "id": "71000000-0000-4000-8000-000000000045",
+      "name": "Wait - Pause Before Shotstack Status Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        1120
+      ],
+      "webhookId": "71000000-0000-4000-8000-000000000044"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.shotstack.io/edit/stage/render/'+encodeURIComponent($json.render_job_id) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000046",
+      "name": "HTTP Request - Read TEST Shotstack Render Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1808,
+        1120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=$input.first().json; function decodeJsonResponse(value){if(value&&typeof value==='object'){if(value.body&&typeof value.body==='object')return value.body;if(typeof value.body==='string'){try{return JSON.parse(value.body);}catch{}}const chunks=value?._readableState?.buffer;if(Array.isArray(chunks)){const bytes=chunks.flatMap(x=>Array.isArray(x?.data)?x.data:[]);if(bytes.length){try{return JSON.parse(Buffer.from(bytes).toString('utf8'));}catch{}}}}return value;} const r=decodeJsonResponse(raw); const p=$('Wait - Pause Before Shotstack Status Check').item.json; const s=r?.response?.status; const attempt=Number(p.poll_attempt||0)+1; const elapsed=Number(p.poll_elapsed_seconds||0)+Number(p.poll_wait_seconds||0); if(s==='failed') throw new Error('SHOTSTACK_RENDER_FAILED'); if(s==='done'){const u=r?.response?.url;if(typeof u!=='string'||!u.startsWith('https://')) throw new Error('SHOTSTACK_DONE_URL_INVALID');return [{json:{...p,poll_attempt:attempt,poll_elapsed_seconds:elapsed,poll_again:false,render_url:u,provider_duration:r.response.duration}}];} const isKnown=['queued','fetching','preprocessing','rendering','saving','generating'].includes(s); if(elapsed>=1200) throw new Error('SHOTSTACK_POLL_EXHAUSTED'); const nextWait=Math.min(60,Number(p.poll_wait_seconds||10)*2); const seenUnrecognized=Array.isArray(p.unrecognized_statuses_seen)?p.unrecognized_statuses_seen:[]; const unrecognized_statuses_seen=isKnown?seenUnrecognized:Array.from(new Set([...seenUnrecognized,String(s)])); return [{json:{...p,poll_attempt:attempt,poll_elapsed_seconds:elapsed,poll_again:true,poll_wait_seconds:nextWait,unrecognized_statuses_seen}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000047",
+      "name": "Code - Classify Bounded Shotstack Poll",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000048",
+              "leftValue": "={{$json.poll_again===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000049",
+      "name": "IF - Does Shotstack Need Another Poll?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2320,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.render_url}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000050",
+      "name": "HTTP Request - Download TEST Rendered MP4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        1360
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "binaryData": true,
+        "dataPropertyName": "working_video_checksum",
+        "action": "hash",
+        "type": "SHA256",
+        "encoding": "hex",
+        "binaryPropertyName": "data"
+      },
+      "id": "71000000-0000-4000-8000-000000000051",
+      "name": "Crypto - Hash TEST Rendered MP4",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        512,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item=$input.first(); let b; try{b=await this.helpers.getBinaryDataBuffer(0,'data');}catch(e){throw new Error('RENDER_BINARY_MISSING');} if(!b.length||b.length<8||b.subarray(4,8).toString('ascii')!=='ftyp'||!item.json.working_video_checksum) throw new Error('RENDER_MP4_BINARY_CONTRACT_INVALID'); const p=$('Code - Classify Bounded Shotstack Poll').first().json; return [{json:{...p,working_video_checksum:item.json.working_video_checksum,downloaded_bytes:b.length,ftyp_signature_valid:true},binary:item.binary}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000052",
+      "name": "Code - Verify Downloaded MP4 Signature And Preserve Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id+'-TEST-reel-'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+'.mp4' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_WORKING_FOLDER_ID"
+        },
+        "options": {
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "test_run_id",
+                "value": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id }}"
+              },
+              {
+                "key": "artifact_key",
+                "value": "={{ 'rendered_reel_mp4_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1] }}"
+              }
+            ]
+          },
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        },
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "data"
+      },
+      "id": "71000000-0000-4000-8000-000000000053",
+      "name": "Google Drive - Save TEST Rendered Reel",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1024,
+        1360
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.shotstack.io/edit/stage/probe/'+encodeURIComponent($('Code - Classify Bounded Shotstack Poll').first().json.render_url) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000054",
+      "name": "HTTP Request - Probe Completed TEST Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1280,
+        1360
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const m=r?.response?.metadata; const f=m?.format||{}; const streams=m?.streams||[]; const v=streams.find(s=>s.codec_type==='video'); const a=streams.find(s=>s.codec_type==='audio'); const duration=Number(f.duration); const b=$('Code - Verify Downloaded MP4 Signature And Preserve Binary').first().json; const p=b; const assembly=$('Code - Persistable AssemblyAI Job ID Before Waiting').first().json; const d=$('Code - Reconcile TEST Rendered Reel').first().json; if(typeof p.render_job_id!=='string'||!p.render_job_id||typeof p.render_url!=='string'||!p.render_url.startsWith('https://')||!Number.isFinite(Number(p.projected_aggregate_cost_usd))||typeof assembly.transcription_job_id!=='string'||!assembly.transcription_job_id) throw new Error('TEST_EVIDENCE_CONTEXT_INCOMPLETE'); const checks={probe_success:r?.success===true,container_mp4:String(f.format_name||'').includes('mp4'),duration_in_contract:Number.isFinite(duration)&&duration>=30&&duration<=60,positive_file_size:Number(f.size)>0,video_codec_h264:v?.codec_name==='h264',dimensions_1080x1920:Number(v?.width)===1080&&Number(v?.height)===1920,audio_codec_aac:a?.codec_name==='aac',download_nonempty:Number(b.downloaded_bytes)>0,ftyp_signature_valid:b.ftyp_signature_valid===true,sha256_present:Boolean(b.working_video_checksum),vtt_manifest_present:Boolean(p.vtt),caption_groups_max_four_words:p.moment.caption_groups.every(g=>g.text.trim().split(/\\s+/).length<=4),caption_manifest_boundaries_exact:p.moment.caption_groups.every(g=>g.words.every(w=>Number.isFinite(w.start_ms)&&Number.isFinite(w.end_ms)&&w.end_ms>w.start_ms))}; const deterministic_pass=Object.values(checks).every(Boolean); if(!deterministic_pass) throw new Error('TEST_MEDIA_PROBE_QA_FAILED'); const evidence={test_mode:true,test_run_id:p.test_run_id,stopped_before_production_approval:true,provider_jobs:{assemblyai:assembly.transcription_job_id,openai:p.openai_response_id,shotstack:p.render_job_id},projected_aggregate_cost_usd:p.projected_aggregate_cost_usd,source:{file_id:p.source_file_id,name:p.source_file_name,duration_seconds:p.source_duration_seconds},selected_moment:{start_ms:p.moment.start_ms,end_ms:p.moment.end_ms,duration_seconds:p.moment.duration_seconds,speaker:p.moment.speaker,hook:p.moment.hook,social_caption:p.moment.social_caption,cta:p.moment.cta},render:{url:p.render_url,drive_file_id:d.id||'',sha256:b.working_video_checksum,bytes:b.downloaded_bytes,probe_format:f,video_stream:v,audio_stream:a},checks,caption_timing:{manifest_source:'AssemblyAI words[] milliseconds',manifest_tolerance_ms:0,visual_active_word_timing_status:'PENDING_HUMAN_REVIEW',visual_timing_cannot_be_proven_by_probe:true},result:'DETERMINISTIC_QA_PASS_HUMAN_CAPTION_REVIEW_REQUIRED'}; return [{json:{...p,transcription_job_id:assembly.transcription_job_id,render_drive_file_id:d.id||'',evidence,evidence_json:JSON.stringify(evidence,null,2)}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000055",
+      "name": "Code - Validate Media Probe And Build TEST Evidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Code - Validate Media Probe And Build TEST Evidence').first().json.evidence_json }}",
+        "name": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id+'-runtime-evidence-'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+'.json' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_WORKING_FOLDER_ID"
+        },
+        "options": {
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "test_run_id",
+                "value": "={{ $('Code - Define Approved Runtime Test Contract').first().json.test_run_id }}"
+              },
+              {
+                "key": "artifact_key",
+                "value": "={{ 'runtime_evidence_json_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1] }}"
+              }
+            ]
+          },
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000056",
+      "name": "Google Drive - Save TEST Runtime Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1808,
+        1360
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00004"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.asset_version_key }}",
+            "asset_id": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.asset_id }}",
+            "moment_id": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.moment_id }}",
+            "asset_version": "1",
+            "caption_payload_url": "={{ 'drive://'+$('Code - Reconcile TEST Validated VTT Manifest').first().json.id }}",
+            "status": "TEST_RENDERED_PENDING_HUMAN_CAPTION_REVIEW",
+            "render_key": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key }}",
+            "render_job_id": "={{ $('Code - Persistable Shotstack Job ID Before Waiting').first().json.render_job_id }}",
+            "preview_drive_file_id": "={{ $('Code - Reconcile TEST Rendered Reel').first().json.id }}",
+            "qa_status": "DETERMINISTIC_PASS_VISUAL_CAPTION_REVIEW_REQUIRED",
+            "review_status": "TEST_PENDING",
+            "delivery_status": "BLOCKED_TEST_ONLY",
+            "final_drive_file_id": "",
+            "final_storage_url": "",
+            "allow_error_writes": "true"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "moment_id",
+              "displayName": "moment_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caption_payload_url",
+              "displayName": "caption_payload_url",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "render_key",
+              "displayName": "render_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "render_job_id",
+              "displayName": "render_job_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "preview_drive_file_id",
+              "displayName": "preview_drive_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "qa_status",
+              "displayName": "qa_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "delivery_status",
+              "displayName": "delivery_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_drive_file_id",
+              "displayName": "final_drive_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_storage_url",
+              "displayName": "final_storage_url",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "allow_error_writes",
+              "displayName": "allow_error_writes",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000057",
+      "name": "Airtable - Upsert TEST Rendered Asset",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        1360
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "tblYOURTABLE00002"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.shotstack_event_id }}",
+            "stage": "TEST_RUNTIME_END_TO_END",
+            "status": "DETERMINISTIC_QA_PASS_PENDING_HUMAN_REVIEW",
+            "episode_id": "={{ $('Code - Define Approved Runtime Test Contract').first().json.episode_id }}",
+            "asset_id": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.asset_id }}",
+            "asset_version": "1",
+            "result_json": "={{ $('Code - Validate Media Probe And Build TEST Evidence').first().json.evidence_json }}",
+            "attempt_number": "={{ $('Code - Enforce Shotstack Claim And Cost Ceiling').first().json.shotstack_attempt_number }}",
+            "payload_hash": "={{ $('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key }}",
+            "preview_drive_file_id": "={{ $('Code - Reconcile TEST Rendered Reel').first().json.id }}",
+            "provider_job_id": "={{ $('Code - Persistable Shotstack Job ID Before Waiting').first().json.render_job_id }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "preview_drive_file_id",
+              "displayName": "preview_drive_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "provider_job_id",
+              "displayName": "provider_job_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000058",
+      "name": "Airtable - Complete TEST Runtime Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2320,
+        1360
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const e=$('Code - Validate Media Probe And Build TEST Evidence').first().json.evidence; return [{json:{status:'TEST_COMPLETE_PENDING_HUMAN_CAPTION_REVIEW',test_run_id:e.test_run_id,render_drive_file_id:e.render.drive_file_id,evidence_file_id:$('Code - Reconcile TEST Runtime Evidence').first().json.id,projected_aggregate_cost_usd:e.projected_aggregate_cost_usd,production_approval:false,final_delivery:false,publishing:false,next_action:'Human reviews the TEST reel captions and audio before any production activation.'}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000059",
+      "name": "Code - Stop Before Production Approval And Return TEST Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "TEST_RUNTIME_EXTERNAL_BOUNDARY_FAILED"
+      },
+      "id": "71000000-0000-4000-8000-000000000060",
+      "name": "Stop and Error - Fail Closed At External Boundary",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        512,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='transcript_json' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000061",
+      "name": "Google Drive - Find Existing TEST Transcript Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        768,
+        1600
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); if(rows.length>1) throw new Error('DRIVE_TRANSCRIPT_JSON_DUPLICATES_FOUND'); return [{json:{needs_write:rows.length===0,existing_file_id:rows[0]?.json?.id||'',artifact_key:'transcript_json'}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000062",
+      "name": "Code - Decide TEST Transcript Evidence Write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000063",
+              "leftValue": "={{$json.needs_write===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000064",
+      "name": "IF - Does TEST Transcript Evidence Need Creation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1280,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='transcript_json' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000065",
+      "name": "Google Drive - Reconcile TEST Transcript Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1552,
+        1600
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); const testRun=$('Code - Define Approved Runtime Test Contract').first().json.test_run_id; if(rows.length!==1) throw new Error('DRIVE_TRANSCRIPT_JSON_RECONCILIATION_FAILED'); const f=rows[0].json; if(f.appProperties?.test_run_id!==testRun||f.appProperties?.artifact_key!=='transcript_json') throw new Error('DRIVE_TRANSCRIPT_JSON_APP_PROPERTIES_INVALID'); return [{json:{...f,artifact_key:'transcript_json',reconciled:true}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000066",
+      "name": "Code - Reconcile TEST Transcript Evidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='moment_copy_json' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000067",
+      "name": "Google Drive - Find Existing TEST Moment And Copy Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2064,
+        1600
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); if(rows.length>1) throw new Error('DRIVE_MOMENT_COPY_JSON_DUPLICATES_FOUND'); return [{json:{needs_write:rows.length===0,existing_file_id:rows[0]?.json?.id||'',artifact_key:'moment_copy_json'}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000068",
+      "name": "Code - Decide TEST Moment And Copy Evidence Write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000069",
+              "leftValue": "={{$json.needs_write===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000070",
+      "name": "IF - Does TEST Moment And Copy Evidence Need Creation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='moment_copy_json' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000071",
+      "name": "Google Drive - Reconcile TEST Moment And Copy Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        512,
+        1840
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); const testRun=$('Code - Define Approved Runtime Test Contract').first().json.test_run_id; if(rows.length!==1) throw new Error('DRIVE_MOMENT_COPY_JSON_RECONCILIATION_FAILED'); const f=rows[0].json; if(f.appProperties?.test_run_id!==testRun||f.appProperties?.artifact_key!=='moment_copy_json') throw new Error('DRIVE_MOMENT_COPY_JSON_APP_PROPERTIES_INVALID'); return [{json:{...f,artifact_key:'moment_copy_json',reconciled:true}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000072",
+      "name": "Code - Reconcile TEST Moment And Copy Evidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='captions_vtt_\"+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+\"' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000073",
+      "name": "Google Drive - Find Existing TEST Validated VTT Manifest",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1024,
+        1840
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); if(rows.length>1) throw new Error('DRIVE_CAPTIONS_VTT_DUPLICATES_FOUND'); const key='captions_vtt_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]; return [{json:{needs_write:rows.length===0,existing_file_id:rows[0]?.json?.id||'',artifact_key:key}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000074",
+      "name": "Code - Decide TEST Validated VTT Manifest Write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000075",
+              "leftValue": "={{$json.needs_write===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000076",
+      "name": "IF - Does TEST Validated VTT Manifest Need Creation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1552,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='captions_vtt_\"+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+\"' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000077",
+      "name": "Google Drive - Reconcile TEST Validated VTT Manifest",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1808,
+        1840
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); const testRun=$('Code - Define Approved Runtime Test Contract').first().json.test_run_id; const key='captions_vtt_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]; if(rows.length!==1) throw new Error('DRIVE_CAPTIONS_VTT_RECONCILIATION_FAILED'); const f=rows[0].json; if(f.appProperties?.test_run_id!==testRun||f.appProperties?.artifact_key!==key) throw new Error('DRIVE_CAPTIONS_VTT_APP_PROPERTIES_INVALID'); return [{json:{...f,artifact_key:key,reconciled:true}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000078",
+      "name": "Code - Reconcile TEST Validated VTT Manifest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='rendered_reel_mp4_\"+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+\"' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000079",
+      "name": "Google Drive - Find Existing TEST Rendered Reel",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2320,
+        1840
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id);\nif(rows.length>1) throw new Error('DRIVE_RENDERED_REEL_MP4_DUPLICATES_FOUND');\nconst key='rendered_reel_mp4_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1];\nconst needs_write=rows.length===0;\nconst verified=$('Code - Verify Downloaded MP4 Signature And Preserve Binary').first();\nconst bin=verified&&verified.binary?verified.binary:null;\nif(needs_write&&!(bin&&bin.data)) throw new Error('RENDERED_REEL_MP4_BINARY_MISSING_BEFORE_UPLOAD');\nconst out={json:{needs_write,existing_file_id:rows[0]?.json?.id||'',artifact_key:key}};\nif(bin&&bin.data) out.binary={data:bin.data};\nreturn [out];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000080",
+      "name": "Code - Decide TEST Rendered Reel Write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000081",
+              "leftValue": "={{$json.needs_write===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000082",
+      "name": "IF - Does TEST Rendered Reel Need Creation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='rendered_reel_mp4_\"+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+\"' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000083",
+      "name": "Google Drive - Reconcile TEST Rendered Reel",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        768,
+        2080
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); const testRun=$('Code - Define Approved Runtime Test Contract').first().json.test_run_id; const key='rendered_reel_mp4_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]; if(rows.length!==1) throw new Error('DRIVE_RENDERED_REEL_MP4_RECONCILIATION_FAILED'); const f=rows[0].json; if(f.appProperties?.test_run_id!==testRun||f.appProperties?.artifact_key!==key) throw new Error('DRIVE_RENDERED_REEL_MP4_APP_PROPERTIES_INVALID'); return [{json:{...f,artifact_key:key,reconciled:true}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000084",
+      "name": "Code - Reconcile TEST Rendered Reel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='runtime_evidence_json_\"+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+\"' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000085",
+      "name": "Google Drive - Find Existing TEST Runtime Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1280,
+        2080
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); if(rows.length>1) throw new Error('DRIVE_RUNTIME_EVIDENCE_JSON_DUPLICATES_FOUND'); const key='runtime_evidence_json_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]; return [{json:{needs_write:rows.length===0,existing_file_id:rows[0]?.json?.id||'',artifact_key:key}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000086",
+      "name": "Code - Decide TEST Runtime Evidence Write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "71000000-0000-4000-8000-000000000087",
+              "leftValue": "={{$json.needs_write===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "71000000-0000-4000-8000-000000000088",
+      "name": "IF - Does TEST Runtime Evidence Need Creation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1808,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='test_run_id' and value='\"+$('Code - Define Approved Runtime Test Contract').first().json.test_run_id+\"' } and appProperties has { key='artifact_key' and value='runtime_evidence_json_\"+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]+\"' } and trashed=false and '\"+$('Code - Define Approved Runtime Test Contract').first().json.test_working_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "YOUR_WORKING_FOLDER_ID"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "71000000-0000-4000-8000-000000000089",
+      "name": "Google Drive - Reconcile TEST Runtime Evidence",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2064,
+        2080
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().filter(i=>i.json&&i.json.id); const testRun=$('Code - Define Approved Runtime Test Contract').first().json.test_run_id; const key='runtime_evidence_json_'+$('Code - Parse Validate Moment Copy And Build VTT Render Contract').first().json.render_key.split('|')[1]; if(rows.length!==1) throw new Error('DRIVE_RUNTIME_EVIDENCE_JSON_RECONCILIATION_FAILED'); const f=rows[0].json; if(f.appProperties?.test_run_id!==testRun||f.appProperties?.artifact_key!==key) throw new Error('DRIVE_RUNTIME_EVIDENCE_JSON_APP_PROPERTIES_INVALID'); return [{json:{...f,artifact_key:key,reconciled:true}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "71000000-0000-4000-8000-000000000090",
+      "name": "Code - Reconcile TEST Runtime Evidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        2080
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72000000-0000-4000-8000-000000000001",
+              "leftValue": "={{$json.assembly_recover_existing_job===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "72000000-0000-4000-8000-000000000002",
+      "name": "IF - Resume Existing AssemblyAI Job?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2320,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "73000000-0000-4000-8000-000000000001",
+              "leftValue": "={{$json.openai_recover_partial_response===true}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "73000000-0000-4000-8000-000000000002",
+      "name": "IF - Reuse Exact OpenAI Response?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2064,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json;\nconst e=x.openai_recovery||{};\nconst exactPartial=Buffer.from('REDACTED_TEST_FIXTURE','base64').toString('utf8');\nif(x.openai_recover_partial_response!==true||e.execution_id!=='515'||e.claim_record_id!=='recYOURRECORDID02'||e.response_id!=='resp_0171418a620d10b9016aa42ad43da487d2a4b42f6450779e32'||e.response_status!=='incomplete'||e.incomplete_reason!=='max_output_tokens'||e.model!=='gpt-5-mini-2025-08-07'||Number(e.max_output_tokens)!==1200||Number(e.input_tokens)!==29403||Number(e.output_tokens)!==1200||Number(e.reasoning_tokens)!==896||e.assembly_job_id!=='00000000-0000-0000-0000-000000000000'||e.partial_output_text!==exactPartial||e.no_openai_resubmit!==true) throw new Error('OPENAI_515_RECOVERY_INPUT_INVALID');\nconst t=$('Code - Classify Bounded AssemblyAI Poll').first().json.transcript;\nif(t.id!==e.assembly_job_id||t.status!=='completed') throw new Error('OPENAI_515_TRANSCRIPT_IDENTITY_MISMATCH');\nconst words=(t.words||[]).filter(w=>Number(w.start)>=55754&&Number(w.end)<=100739);\nconst excerpt=words.map(w=>w.text).join(' ');\nif(words.length!==111||Number(words[0]?.start)!==55754||Number(words.at(-1)?.end)!==100739||words.some(w=>w.speaker!=='A')) throw new Error('OPENAI_515_WORD_BOUNDARY_EVIDENCE_MISMATCH');\nconst recovered={start_ms:55754,end_ms:100739,speaker:'A',source_excerpt:\"Well, these are the first full holographic augmented reality glasses, I think, that exist in in the world. We've made, I think it's a few thousand or something, right? Very hard to make each one of these, but this is the culmination of 10 years of research and development that we've done to basically miniaturize all the computing that you need to have glasses, not a headset, but glasses that can put full holograms into the world with a wide field of view. So you can imagine sort of in the future, we'd be having a version of this conversation where, you know, maybe I or you are not even here.\",selection_reason:'A concise, visionary explanation of the product and its potential — a single coherent speaker turn that clearly describes what the glasses are and the future use-case scenario.',hook:'First full holographic AR glasses — what could that even look like?',social_caption:'“Glasses, not headsets: full holograms in the world.” Hear how 10 years of R&D could change how we work, play, and connect. #HugeIfTrue #AR',cta:e.completed_cta,context_risk:Number(e.context_risk)};\nif(excerpt!==recovered.source_excerpt||recovered.cta!=='Listen to the full episode of Huge If True for the complete demo and context.'||recovered.context_risk!==0.2) throw new Error('OPENAI_515_RECOVERED_CONTENT_EVIDENCE_MISMATCH');\nreturn [{json:{id:e.response_id,object:'response',status:'completed',model:e.model,usage:{input_tokens:29403,output_tokens:1200,total_tokens:30603,output_tokens_details:{reasoning_tokens:896}},output:[{id:'recovered_execution_515_message',type:'message',status:'completed',role:'assistant',content:[{type:'output_text',annotations:[],text:JSON.stringify(recovered)}]}],recovery:{execution_id:'515',claim_record_id:e.claim_record_id,reason:'max_output_tokens',no_additional_openai_call:true}}}];",
+        "mode": "runOnceForAllItems",
+        "language": "javaScript"
+      },
+      "id": "73000000-0000-4000-8000-000000000003",
+      "name": "Code - Recover Exact OpenAI Result From Execution 515",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferLast"
+            }
+          }
+        }
+      },
+      "id": "7e8a3c37-0ab9-4315-a619-48d3a17d31b0",
+      "name": "Merge - Restore TEST Rendered MP4 Binary After Hash",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        768,
+        1488
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger - Start Approved Controlled Podcast Runtime Test": {
+      "main": [
+        [
+          {
+            "node": "Code - Define Approved Runtime Test Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Define Approved Runtime Test Contract": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Upsert TEST Episode Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert TEST Episode Record": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Reconcile AssemblyAI Paid Stage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Reconcile AssemblyAI Paid Stage": {
+      "main": [
+        [
+          {
+            "node": "Code - Refuse Duplicate AssemblyAI Submission And Build Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Refuse Duplicate AssemblyAI Submission And Build Claim": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Write AssemblyAI Submission Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Write AssemblyAI Submission Claim": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Verify Unique AssemblyAI Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Verify Unique AssemblyAI Claim": {
+      "main": [
+        [
+          {
+            "node": "Code - Enforce Verified AssemblyAI Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Download Approved TEST Source": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Upload TEST Source Once To AssemblyAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Upload TEST Source Once To AssemblyAI": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate AssemblyAI Upload And Build One Transcript Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate AssemblyAI Upload And Build One Transcript Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Submit Exactly One AssemblyAI Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Submit Exactly One AssemblyAI Transcription": {
+      "main": [
+        [
+          {
+            "node": "Code - Persistable AssemblyAI Job ID Before Waiting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Persistable AssemblyAI Job ID Before Waiting": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Save AssemblyAI Job ID Immediately",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Save AssemblyAI Job ID Immediately": {
+      "main": [
+        [
+          {
+            "node": "Code - Initialize Bounded AssemblyAI Poll",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Initialize Bounded AssemblyAI Poll": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before AssemblyAI Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Pause Before AssemblyAI Status Check": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Read AssemblyAI Transcript Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Read AssemblyAI Transcript Status": {
+      "main": [
+        [
+          {
+            "node": "Code - Classify Bounded AssemblyAI Poll",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Classify Bounded AssemblyAI Poll": {
+      "main": [
+        [
+          {
+            "node": "IF - Does AssemblyAI Need Another Poll?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does AssemblyAI Need Another Poll?": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before AssemblyAI Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Find Existing TEST Transcript Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save TEST Transcript Evidence": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Transcript Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Transcript Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Reconcile OpenAI Paid Stage": {
+      "main": [
+        [
+          {
+            "node": "Code - Refuse Duplicate OpenAI Submission And Build Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Refuse Duplicate OpenAI Submission And Build Claim": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Write OpenAI Submission Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Write OpenAI Submission Claim": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Verify Unique OpenAI Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Verify Unique OpenAI Claim": {
+      "main": [
+        [
+          {
+            "node": "Code - Enforce OpenAI Claim And Build Strict One-Call Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Make One Short GPT-5-Mini Responses Call": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Validate Moment Copy And Build VTT Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Validate Moment Copy And Build VTT Render Contract": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Upsert TEST Selected Moment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert TEST Selected Moment": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Find Existing TEST Moment And Copy Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save TEST Moment And Copy Evidence": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Moment And Copy Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Moment And Copy Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save TEST Validated VTT Manifest": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Validated VTT Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Validated VTT Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Probe Public TEST Source Before Render": {
+      "main": [
+        [
+          {
+            "node": "Code - Fail Closed If Shotstack Cannot Access Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Fail Closed If Shotstack Cannot Access Source": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Reconcile Shotstack Paid Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Reconcile Shotstack Paid Stage": {
+      "main": [
+        [
+          {
+            "node": "Code - Refuse Duplicate Shotstack Submission And Build Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Refuse Duplicate Shotstack Submission And Build Claim": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Write Shotstack Submission Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Write Shotstack Submission Claim": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Verify Unique Shotstack Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Verify Unique Shotstack Claim": {
+      "main": [
+        [
+          {
+            "node": "Code - Enforce Shotstack Claim And Cost Ceiling",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Enforce Shotstack Claim And Cost Ceiling": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Submit Exactly One TEST Shotstack Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Submit Exactly One TEST Shotstack Render": {
+      "main": [
+        [
+          {
+            "node": "Code - Persistable Shotstack Job ID Before Waiting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Persistable Shotstack Job ID Before Waiting": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Save Shotstack Job ID Immediately",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Save Shotstack Job ID Immediately": {
+      "main": [
+        [
+          {
+            "node": "Code - Initialize Bounded Shotstack Poll",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Initialize Bounded Shotstack Poll": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before Shotstack Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Pause Before Shotstack Status Check": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Read TEST Shotstack Render Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Read TEST Shotstack Render Status": {
+      "main": [
+        [
+          {
+            "node": "Code - Classify Bounded Shotstack Poll",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Classify Bounded Shotstack Poll": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Shotstack Need Another Poll?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Shotstack Need Another Poll?": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before Shotstack Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request - Download TEST Rendered MP4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Download TEST Rendered MP4": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash TEST Rendered MP4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge - Restore TEST Rendered MP4 Binary After Hash",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Verify Downloaded MP4 Signature And Preserve Binary": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Find Existing TEST Rendered Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save TEST Rendered Reel": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Rendered Reel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Rendered Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Probe Completed TEST Render": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate Media Probe And Build TEST Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate Media Probe And Build TEST Evidence": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Find Existing TEST Runtime Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save TEST Runtime Evidence": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Runtime Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Runtime Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert TEST Rendered Asset": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete TEST Runtime Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete TEST Runtime Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Stop Before Production Approval And Return TEST Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Existing TEST Transcript Evidence": {
+      "main": [
+        [
+          {
+            "node": "Code - Decide TEST Transcript Evidence Write",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Decide TEST Transcript Evidence Write": {
+      "main": [
+        [
+          {
+            "node": "IF - Does TEST Transcript Evidence Need Creation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does TEST Transcript Evidence Need Creation?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save TEST Transcript Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Transcript Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Reconcile TEST Transcript Evidence": {
+      "main": [
+        [
+          {
+            "node": "Code - Reconcile TEST Transcript Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Reconcile TEST Transcript Evidence": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Reconcile OpenAI Paid Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Existing TEST Moment And Copy Evidence": {
+      "main": [
+        [
+          {
+            "node": "Code - Decide TEST Moment And Copy Evidence Write",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Decide TEST Moment And Copy Evidence Write": {
+      "main": [
+        [
+          {
+            "node": "IF - Does TEST Moment And Copy Evidence Need Creation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does TEST Moment And Copy Evidence Need Creation?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save TEST Moment And Copy Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Moment And Copy Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Reconcile TEST Moment And Copy Evidence": {
+      "main": [
+        [
+          {
+            "node": "Code - Reconcile TEST Moment And Copy Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Reconcile TEST Moment And Copy Evidence": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Find Existing TEST Validated VTT Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Existing TEST Validated VTT Manifest": {
+      "main": [
+        [
+          {
+            "node": "Code - Decide TEST Validated VTT Manifest Write",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Decide TEST Validated VTT Manifest Write": {
+      "main": [
+        [
+          {
+            "node": "IF - Does TEST Validated VTT Manifest Need Creation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does TEST Validated VTT Manifest Need Creation?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save TEST Validated VTT Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Validated VTT Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Reconcile TEST Validated VTT Manifest": {
+      "main": [
+        [
+          {
+            "node": "Code - Reconcile TEST Validated VTT Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Reconcile TEST Validated VTT Manifest": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Probe Public TEST Source Before Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Existing TEST Rendered Reel": {
+      "main": [
+        [
+          {
+            "node": "Code - Decide TEST Rendered Reel Write",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Decide TEST Rendered Reel Write": {
+      "main": [
+        [
+          {
+            "node": "IF - Does TEST Rendered Reel Need Creation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does TEST Rendered Reel Need Creation?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save TEST Rendered Reel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Rendered Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Reconcile TEST Rendered Reel": {
+      "main": [
+        [
+          {
+            "node": "Code - Reconcile TEST Rendered Reel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Reconcile TEST Rendered Reel": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Probe Completed TEST Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Existing TEST Runtime Evidence": {
+      "main": [
+        [
+          {
+            "node": "Code - Decide TEST Runtime Evidence Write",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Decide TEST Runtime Evidence Write": {
+      "main": [
+        [
+          {
+            "node": "IF - Does TEST Runtime Evidence Need Creation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does TEST Runtime Evidence Need Creation?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save TEST Runtime Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Reconcile TEST Runtime Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Reconcile TEST Runtime Evidence": {
+      "main": [
+        [
+          {
+            "node": "Code - Reconcile TEST Runtime Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error - Fail Closed At External Boundary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Reconcile TEST Runtime Evidence": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Upsert TEST Rendered Asset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Enforce Verified AssemblyAI Claim": {
+      "main": [
+        [
+          {
+            "node": "IF - Resume Existing AssemblyAI Job?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Resume Existing AssemblyAI Job?": {
+      "main": [
+        [
+          {
+            "node": "Code - Persistable AssemblyAI Job ID Before Waiting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Download Approved TEST Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Enforce OpenAI Claim And Build Strict One-Call Request": {
+      "main": [
+        [
+          {
+            "node": "IF - Reuse Exact OpenAI Response?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Reuse Exact OpenAI Response?": {
+      "main": [
+        [
+          {
+            "node": "Code - Recover Exact OpenAI Result From Execution 515",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request - Make One Short GPT-5-Mini Responses Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Recover Exact OpenAI Result From Execution 515": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Validate Moment Copy And Build VTT Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash TEST Rendered MP4": {
+      "main": [
+        [
+          {
+            "node": "Merge - Restore TEST Rendered MP4 Binary After Hash",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge - Restore TEST Rendered MP4 Binary After Hash": {
+      "main": [
+        [
+          {
+            "node": "Code - Verify Downloaded MP4 Signature And Preserve Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1800,
+    "availableInMCP": false,
+    "binaryMode": "separate"
+  },
+  "tags": [],
+  "activeVersion": null
+}

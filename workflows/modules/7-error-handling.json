@@ -1,0 +1,1201 @@
+{
+  "name": "Podcast Video Automation v1 - 7 Error Handling",
+  "nodes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Error Trigger - Catch Podcast Workflow Failure",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -100
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "Execute Workflow Trigger - Receive Structured Podcast Failure",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        120
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "workflow_name",
+              "type": "string"
+            },
+            {
+              "name": "execution_id",
+              "type": "string"
+            },
+            {
+              "name": "stage",
+              "type": "string"
+            },
+            {
+              "name": "episode_id",
+              "type": "string"
+            },
+            {
+              "name": "asset_id",
+              "type": "string"
+            },
+            {
+              "name": "asset_version",
+              "type": "number"
+            },
+            {
+              "name": "stage_run_key",
+              "type": "string"
+            },
+            {
+              "name": "attempt_number",
+              "type": "number"
+            },
+            {
+              "name": "error_code",
+              "type": "string"
+            },
+            {
+              "name": "error_message",
+              "type": "string"
+            },
+            {
+              "name": "retryable",
+              "type": "boolean"
+            },
+            {
+              "name": "test_mode",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_external_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_notification",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_error_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "last_completed_stage",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "name": "Code - Normalize Redact And Classify Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const source=$input.first().json;const sensitive=/(^|_)(api_?key|token|authorization|password|secret|bearer)($|_)/i;const clean=(value,key='')=>{if(sensitive.test(key))return '[REDACTED]';if(Array.isArray(value))return value.map(v=>clean(v));if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,clean(v,k)]));if(typeof value==='string')return value.replace(/Bearer\\s+[A-Za-z0-9._~-]+/gi,'Bearer [REDACTED]').replace(/(api[_-]?key|token|password|secret)=([^&\\s]+)/gi,'$1=[REDACTED]');return value;};const d=clean(source);const attempt=Number(d.attempt_number||1);const allowErrorWrites=d.allow_error_writes===true;return [{json:{...d,test_mode:d.test_mode!==false,allow_external_writes:false,allow_error_writes:allowErrorWrites,allow_notification:d.allow_notification===true,attempt_number:attempt,attempts_exhausted:d.retryable!==true||attempt>=(d.test_mode===false?3:1),record_type:d.asset_id?'asset':'episode',terminal_state:'FAILED',notification_status:'NOT_CONFIGURED',persistence_confirmed:false}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "name": "Crypto - Build Processing Event ID",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ [$json.workflow_name,$json.execution_id,$json.stage_run_key,$json.attempt_number,$json.error_code].join(\"|\") }}",
+        "dataPropertyName": "event_id",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "name": "IF - Are Fail-Closed Error Writes Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000005",
+              "leftValue": "={{ $json.allow_error_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000008",
+      "name": "Code - Confirm Processing Event Persistence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        -180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const saved=$input.first().json;const source=$('Code - Check Error Storage Configuration').first().json;let policyRecord={};try{policyRecord=$('Airtable - Load Failure Policy').first().json||{};}catch{}const policy=policyRecord.fields||policyRecord||{};const bool=value=>value===true||String(value||'').trim().toLowerCase()==='true';const recordId=saved.id||saved.records?.[0]?.id||null;return [{json:{...source,failure_policy:policy,persistence_response:saved,persistence_confirmed:Boolean(recordId),processing_event_record_id:recordId,attempts_exhausted:source.attempts_exhausted===true,record_type:String(source.record_type||'episode'),last_completed_stage:String(source.last_completed_stage||''),allow_notification:source.allow_notification===true||bool(policy.allow_notification??policy['Allow Notification']),notification_status:String(source.notification_status||'NOT_CONFIGURED')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "name": "Switch - Choose Failed Record Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1480,
+        -100
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000009",
+                    "leftValue": "={{ $json.record_type }}",
+                    "rightValue": "episode",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "episode"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000010",
+                    "leftValue": "={{ $json.record_type }}",
+                    "rightValue": "asset",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "asset"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "IF - Is Owner Notification Configured?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1720,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000012",
+              "leftValue": "={{ $json.allow_notification === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000014",
+      "name": "HTTP Request - Notify Configured Workflow Owner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1960,
+        -180
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://configuration.invalid/notification-endpoint",
+        "authentication": "none",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.provider_request || $json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "Edit Fields - Return Error Handling Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,recorded:$json.persistence_confirmed===true,notification_status:$json.allow_notification===true?'BLOCKED_DISABLED_NODE':'NOT_CONFIGURED',terminal_state:'FAILED'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000016",
+      "name": "Edit Fields - Return Durable Local Error Evidence",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1040,
+        140
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,recorded:false,notification_status:'NOT_CONFIGURED',terminal_state:'FAILED',configuration_hold:true}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000085",
+      "name": "Code - Check Error Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        -220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"events\",\"episodes\",\"assets\",\"config\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"table:events\",\"table:episodes\",\"table:assets\",\"table:config\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000087",
+      "name": "IF - Is Error Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1260,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000086",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_error_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000088",
+      "name": "Airtable - Upsert Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1500,
+        -260
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Error Storage Configuration').first().json.event_id }}",
+            "episode_id": "={{ $('Code - Check Error Storage Configuration').first().json.episode_id || '' }}",
+            "asset_id": "={{ $('Code - Check Error Storage Configuration').first().json.asset_id || '' }}",
+            "stage": "={{ $('Code - Check Error Storage Configuration').first().json.stage }}",
+            "status": "={{ $('Code - Check Error Storage Configuration').first().json.attempts_exhausted ? 'FAILED' : 'RETRYABLE' }}",
+            "attempt_number": "={{ $('Code - Check Error Storage Configuration').first().json.attempt_number }}",
+            "error_code": "={{ $('Code - Check Error Storage Configuration').first().json.error_code }}",
+            "error_message": "={{ $('Code - Check Error Storage Configuration').first().json.error_message }}",
+            "last_completed_stage": "={{ $('Code - Check Error Storage Configuration').first().json.last_completed_stage || '' }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attempt_number",
+              "displayName": "attempt_number",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_code",
+              "displayName": "error_code",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000089",
+      "name": "Airtable - Mark Failed Episode State",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1740,
+        -300
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $('Code - Check Error Storage Configuration').first().json.episode_id }}",
+            "status": "FAILED",
+            "last_completed_stage": "={{ $('Code - Check Error Storage Configuration').first().json.last_completed_stage || '' }}"
+          },
+          "matchingColumns": [
+            "episode_id"
+          ],
+          "schema": [
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000090",
+      "name": "Airtable - Mark Failed Asset State",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1740,
+        -100
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Error Storage Configuration').first().json.asset_id+'|'+($('Code - Check Error Storage Configuration').first().json.asset_version||1) }}",
+            "asset_id": "={{ $('Code - Check Error Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Error Storage Configuration').first().json.asset_version||1 }}",
+            "status": "FAILED"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000016",
+      "name": "Airtable - Load Failure Policy",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1500,
+        -500
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.tables.config }}"
+        },
+        "filterByFormula": "={Config Key}='FAILURE_POLICY'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000017",
+      "name": "Airtable - Record Notification Result",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        160
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Error Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Error Storage Configuration').first().json.event_id }}",
+            "notification_status": "={{ $json.status || \"SENT\" }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notification_status",
+              "displayName": "notification_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000007",
+      "name": "IF - Is Failure Terminal Or Attempts Exhausted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1500,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000006",
+              "leftValue": "={{ $json.attempts_exhausted === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger - Catch Podcast Workflow Failure": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Redact And Classify Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger - Receive Structured Podcast Failure": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Redact And Classify Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Redact And Classify Failure": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Processing Event ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Processing Event ID": {
+      "main": [
+        [
+          {
+            "node": "IF - Are Fail-Closed Error Writes Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Confirm Processing Event Persistence": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Failure Terminal Or Attempts Exhausted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Choose Failed Record Type": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Mark Failed Episode State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Mark Failed Asset State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Is Owner Notification Configured?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Owner Notification Configured?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Notify Configured Workflow Owner",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Error Handling Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Notify Configured Workflow Owner": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Record Notification Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Error Handling Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return Durable Local Error Evidence": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Error Handling Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Error Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Error Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Error Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Load Failure Policy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Durable Local Error Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Confirm Processing Event Persistence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Durable Local Error Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Mark Failed Episode State": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Owner Notification Configured?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Durable Local Error Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Mark Failed Asset State": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Owner Notification Configured?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Durable Local Error Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Failure Policy": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Upsert Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Durable Local Error Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Record Notification Result": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Error Handling Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Error Handling Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Are Fail-Closed Error Writes Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Error Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Durable Local Error Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Failure Terminal Or Attempts Exhausted?": {
+      "main": [
+        [
+          {
+            "node": "Switch - Choose Failed Record Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Is Owner Notification Configured?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "binaryMode": "separate"
+  },
+  "active": false
+}

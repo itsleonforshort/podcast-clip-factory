@@ -1,0 +1,3532 @@
+{
+  "name": "Podcast Video Automation v1 - 6 Review Decision",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "episode_id"
+            },
+            {
+              "name": "review_id"
+            },
+            {
+              "name": "asset_id"
+            },
+            {
+              "name": "asset_version",
+              "type": "number"
+            },
+            {
+              "name": "decision"
+            },
+            {
+              "name": "decision_modified_at"
+            },
+            {
+              "name": "feedback"
+            },
+            {
+              "name": "change_scope"
+            },
+            {
+              "name": "stage_run_key"
+            },
+            {
+              "name": "test_mode",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_external_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_delivery",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_error_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "context_risk_review_threshold",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Execute Workflow Trigger - Receive 6 Review Decision Request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "podcast-video-automation-v1-review-decision",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "Webhook - Receive Review Decision",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -208
+      ],
+      "webhookId": "1c96ae2d-f8ad-42bf-88d2-241e5e1f70f9"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const x=raw.body||raw;const decision=String(x.decision||'').toUpperCase();const core=['episode_id','review_id','asset_id','asset_version','decision_modified_at','stage_run_key'];const missing=core.filter(k=>x[k]===undefined||x[k]===null||x[k]==='');if(!['APPROVED','CHANGES_REQUESTED','REJECTED'].includes(decision))missing.push('decision');if(['CHANGES_REQUESTED','REJECTED'].includes(decision)&&!String(x.feedback||'').trim())missing.push('feedback');if(decision==='CHANGES_REQUESTED'&&!String(x.change_scope||'').trim())missing.push('change_scope');const rawThreshold=x.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...x,decision,test_mode:x.test_mode!==false,allow_external_writes:x.allow_external_writes===true,allow_delivery:x.allow_delivery===true,allow_error_writes:x.allow_error_writes===true,context_risk_review_threshold:Number.isFinite(threshold)?threshold:null,atomic_claim_verified:false,atomic_claim_block_reason:'TST-AIRTABLE-01 requires uniquely enforced conditional ownership',contract_valid:missing.length===0,missing_fields:[...new Set(missing)],stage_name:'review_decision',stage_asset_id:x.asset_id||'none',stage_asset_version:Number(x.asset_version||1),review_key_source:[x.review_id,x.asset_id,Number(x.asset_version||1),decision,x.decision_modified_at].join('|')}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000003",
+      "name": "Code - Validate 6 Review Decision Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "leftValue": "={{ $json.contract_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000005",
+      "name": "IF - Is 6 Review Decision Contract Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:false,status:'CONTRACT_FAILED'}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000006",
+      "name": "Edit Fields - Return 6 Review Decision Contract Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json; const payload={review_id:x.review_id,asset_id:x.asset_id,asset_version:x.asset_version,decision:x.decision,decision_modified_at:x.decision_modified_at,feedback:x.feedback||'',change_scope:x.change_scope||''}; const stable=v=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v; return [{json:{...x,input_hash_source:JSON.stringify(stable(payload))}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000007",
+      "name": "Code - Build 6 Review Decision Input Hash Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "value": "={{ $json.input_hash_source }}",
+        "dataPropertyName": "computed_input_hash"
+      },
+      "id": "00000000-0000-4000-8000-000000000008",
+      "name": "Crypto - Hash 6 Review Decision Stage Input",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json; return [{json:{...x,stage_key_source:[x.episode_id,x.stage_name,x.stage_asset_id,x.stage_asset_version,x.computed_input_hash].join('|')}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000009",
+      "name": "Code - Build 6 Review Decision Stage Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "value": "={{ $json.stage_key_source }}",
+        "dataPropertyName": "computed_stage_run_key"
+      },
+      "id": "00000000-0000-4000-8000-000000000010",
+      "name": "Crypto - Build 6 Review Decision Stage Run Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000011",
+              "leftValue": "={{ $json.stage_run_key === $json.computed_stage_run_key }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000012",
+      "name": "IF - Does Supplied 6 Review Decision Stage Key Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:false,status:'STAGE_KEY_MISMATCH'}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "Edit Fields - Return 6 Review Decision Stage Key Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2000,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "value": "={{ $json.review_key_source }}",
+        "dataPropertyName": "review_decision_key"
+      },
+      "id": "00000000-0000-4000-8000-000000000014",
+      "name": "Crypto - Build Review Decision Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json; const keys=Array.isArray(x.existing_review_decision_keys)?x.existing_review_decision_keys:[]; return [{json:{...x,review_already_processed:keys.includes(x.review_decision_key),review_dedupe_checked:true}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "Code - Check Processed Review Decision Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000016",
+              "leftValue": "={{ $json.review_already_processed !== true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000017",
+      "name": "IF - Is Review Decision New?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2480,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:true,status:'IDEMPOTENT_REPLAY',delivery_attempted:false}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000018",
+      "name": "Edit Fields - Return Existing Review Decision",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2720,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000019",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "APPROVED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "APPROVED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000020",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "CHANGES_REQUESTED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CHANGES_REQUESTED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000021",
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "REJECTED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REJECTED"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000022",
+      "name": "Switch - Route Review Decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2720,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json; return [{json:{...x,delivery_key_source:[x.asset_id,x.asset_version,'final-drive'].join('|')}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000023",
+      "name": "Code - Build Final Delivery Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "value": "={{ $json.delivery_key_source }}",
+        "dataPropertyName": "delivery_key"
+      },
+      "id": "00000000-0000-4000-8000-000000000024",
+      "name": "Crypto - Build Final Delivery Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json; const keys=Array.isArray(x.existing_delivery_keys)?x.existing_delivery_keys:[]; return [{json:{...x,final_delivery_present:keys.includes(x.delivery_key),delivery_dedupe_checked:true}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000025",
+      "name": "Code - Check Existing Final Delivery Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000026",
+              "leftValue": "={{ $json.final_delivery_present === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000027",
+      "name": "IF - Is Final Delivery Already Present?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3680,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000028",
+              "leftValue": "={{ $json.allow_delivery === true && $json.allow_external_writes === true && $json.test_mode === false && $json.atomic_claim_verified === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000029",
+      "name": "IF - Is Approved Delivery Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3920,
+        -464
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:true,status:'APPROVED_CONFIGURATION_HOLD',delivery_attempted:false}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000031",
+      "name": "Edit Fields - Return Approved Delivery Configuration Hold",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        4160,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:true,status:'APPROVED',delivery_attempted:false}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000032",
+      "name": "Edit Fields - Return Approved Review Decision",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        4400,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json; return [{json:{...x,ok:true,status:'CHANGES_REQUESTED',next_asset_version:Number(x.asset_version)+1,delivery_attempted:false}}];"
+      },
+      "id": "00000000-0000-4000-8000-000000000033",
+      "name": "Code - Build Changes Requested Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:true,status:'REJECTED',delivery_attempted:false}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000034",
+      "name": "Edit Fields - Return Rejected Review Decision",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3200,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({...$json,ok:false,status:'DECISION_FALLBACK',delivery_attempted:false}) }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000035",
+      "name": "Edit Fields - Return Review Decision Fallback",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3200,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"assets\",\"reviews\",\"episodes\",\"events\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"drive_id\",\"working_folder_id\",\"final_folder_id\",\"table:assets\",\"table:reviews\",\"table:episodes\",\"table:events\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\",\"drive\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      },
+      "id": "90000000-0000-4000-8000-000000000069",
+      "name": "Code - Check Review And Delivery Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        -528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000070",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "90000000-0000-4000-8000-000000000071",
+      "name": "IF - Is Review Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2944,
+        -528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "filterByFormula": "={{ \"AND({asset_id}='\"+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+\"',{asset_version}=\"+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version+\")\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "90000000-0000-4000-8000-000000000072",
+      "name": "Airtable - Load Asset For Review Decision",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3184,
+        -528
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.reviews }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "review_decision_key": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.review_decision_key }}",
+            "review_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.review_id }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "decision": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.decision }}",
+            "feedback": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.feedback || '' }}",
+            "reviewer": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.reviewer || '' }}",
+            "approved_at": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.decision==='APPROVED' ? $('Code - Check Review And Delivery Storage Configuration').first().json.decision_modified_at : '' }}"
+          },
+          "matchingColumns": [
+            "review_decision_key"
+          ],
+          "schema": [
+            {
+              "id": "review_decision_key",
+              "displayName": "review_decision_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_id",
+              "displayName": "review_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reviewer",
+              "displayName": "reviewer",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000073",
+      "name": "Airtable - Upsert Exact Review Decision",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3424,
+        -528
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response=$input.first().json;const source=$('Code - Check Review And Delivery Storage Configuration').first().json;return [{json:{...source,review_persistence:response}}];"
+      },
+      "id": "90000000-0000-4000-8000-000000000074",
+      "name": "Code - Restore Review Decision After Persistence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        -528
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='delivery_key' and value='\"+String($('Crypto - Build Final Delivery Key').first().json.delivery_key).replace(/'/g,\"\\\\'\")+\"' } and appProperties has { key='delivery_artifact' and value='final_mp4' } and trashed=false and '\"+$('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.final_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.drive_id }}"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.final_folder_id }}"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ],
+          "simplifyOutput": false
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000075",
+      "name": "Google Drive - Find Approved Final Delivery By Key - MP4 Artifact",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4384,
+        -624
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const source=$('Code - Check Review And Delivery Storage Configuration').first().json;const valid=r=>r&&Object.keys(r).length&&r.id;const mp4Rows=$items('Google Drive - Find Approved Final Delivery By Key - MP4 Artifact').map(i=>i.json).filter(valid);const copyRows=$input.all().map(i=>i.json).filter(valid);const duplicate=mp4Rows.length>1||copyRows.length>1;const mp4=mp4Rows[0]||null,copy=copyRows[0]||null;return [{json:{...source,delivery_key:$('Crypto - Build Final Delivery Key').first().json.delivery_key,drive_delivery_results_unique:!duplicate,drive_delivery_exists:!duplicate&&Boolean(mp4&&copy),final_mp4_exists:!duplicate&&Boolean(mp4),copy_package_exists:!duplicate&&Boolean(copy),existing_final_drive_file_id:mp4?.id||null,existing_final_storage_url:mp4?.webViewLink||'',existing_content_package_file_id:copy?.id||null,delivery_duplicate_counts:{final_mp4:mp4Rows.length,copy_package:copyRows.length},error_code:duplicate?'DRIVE_DELIVERY_DUPLICATE':'',retryable:false}}];"
+      },
+      "id": "90000000-0000-4000-8000-000000000076",
+      "name": "Code - Check Existing Final Drive Delivery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4624,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000077",
+              "leftValue": "={{ $json.drive_delivery_exists === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "90000000-0000-4000-8000-000000000078",
+      "name": "IF - Does Approved Final File Exist In Drive?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4864,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Airtable - Load Asset For Review Decision').first().json.preview_drive_file_id || $('Airtable - Load Asset For Review Decision').first().json.fields?.preview_drive_file_id || '' }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000079",
+      "name": "Google Drive - Download Approved Working Video",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5104,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "data",
+        "name": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+'-v'+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version+'-approved.mp4' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.drive_id }}"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.final_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ],
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "delivery_key",
+                "value": "={{ $('Crypto - Build Final Delivery Key').first().json.delivery_key }}"
+              },
+              {
+                "key": "delivery_artifact",
+                "value": "final_mp4"
+              }
+            ]
+          }
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000080",
+      "name": "Google Drive - Upload Approved Final MP4",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5344,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Google Drive - Upload Approved Final MP4').first().json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000081",
+      "name": "Google Drive - Verify Approved Final MP4",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5584,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "createFromText",
+        "content": "={{ JSON.stringify({asset_id:$('Code - Check Review And Delivery Storage Configuration').first().json.asset_id,asset_version:$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version,approved_at:$('Code - Check Review And Delivery Storage Configuration').first().json.decision_modified_at,copy:$('Airtable - Load Asset For Review Decision').first().json}) }}",
+        "name": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+'-v'+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version+'-copy.json' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.drive_id }}"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.final_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false,
+          "appPropertiesUi": {
+            "appPropertyValues": [
+              {
+                "key": "delivery_key",
+                "value": "={{ $('Crypto - Build Final Delivery Key').first().json.delivery_key }}"
+              },
+              {
+                "key": "delivery_artifact",
+                "value": "copy_package"
+              }
+            ]
+          },
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ]
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000082",
+      "name": "Google Drive - Upload Approved Copy Package",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5824,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Google Drive - Upload Approved Copy Package').first().json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000083",
+      "name": "Google Drive - Verify Approved Copy Package",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        6064,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+'|'+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "final_drive_file_id": "={{ $json.final_drive_file_id }}",
+            "final_storage_url": "={{ $json.final_storage_url }}",
+            "content_package_file_id": "={{ $json.content_package_file_id }}",
+            "review_status": "APPROVED",
+            "delivery_status": "COMPLETE",
+            "status": "COMPLETE"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_drive_file_id",
+              "displayName": "final_drive_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_storage_url",
+              "displayName": "final_storage_url",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content_package_file_id",
+              "displayName": "content_package_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "delivery_status",
+              "displayName": "delivery_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "90000000-0000-4000-8000-000000000084",
+      "name": "Airtable - Mark Approved Asset Complete",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6304,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "appYOURBASEID0000"
+        },
+        "tableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.PODCAST_AIRTABLE_TABLE_REVIEWS }}"
+        },
+        "triggerField": "={{ $vars.PODCAST_AIRTABLE_REVIEW_TRIGGER_FIELD }}",
+        "additionalFields": {}
+      },
+      "id": "91000000-0000-4000-8000-000000000010",
+      "name": "Airtable Trigger - Watch Review Decisions",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        272
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.reviews }}"
+        },
+        "filterByFormula": "={{ \"{review_decision_key}='\"+$('Code - Check Review And Delivery Storage Configuration').first().json.review_decision_key+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "91000000-0000-4000-8000-000000000011",
+      "name": "Airtable - Find Processed Review Decision",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3104,
+        -288
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+'|'+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "payload_hash": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.payload_hash }}",
+            "review_status": "APPROVED"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "91000000-0000-4000-8000-000000000012",
+      "name": "Airtable - Bind Approval To Asset Version And Payload Hash",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3904,
+        -800
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+'|'+(Number($('Code - Check Review And Delivery Storage Configuration').first().json.asset_version)+1) }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ Number($('Code - Check Review And Delivery Storage Configuration').first().json.asset_version)+1 }}",
+            "review_status": "CHANGES_REQUESTED",
+            "change_scope": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.change_scope || '' }}",
+            "feedback": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.feedback || '' }}",
+            "status": "REVISION_REQUIRED"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "change_scope",
+              "displayName": "change_scope",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "91000000-0000-4000-8000-000000000013",
+      "name": "Airtable - Create Requested Asset Version",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3904,
+        -528
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id+'|'+$('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "review_status": "REJECTED",
+            "feedback": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.feedback || '' }}",
+            "status": "REJECTED"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "91000000-0000-4000-8000-000000000014",
+      "name": "Airtable - Mark Asset Rejected",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3904,
+        -256
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.episode_id || '' }}",
+            "completion_recheck_required": "true",
+            "last_completed_stage": "ASSET_DELIVERED"
+          },
+          "matchingColumns": [
+            "episode_id"
+          ],
+          "schema": [
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "completion_recheck_required",
+              "displayName": "completion_recheck_required",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "91000000-0000-4000-8000-000000000015",
+      "name": "Airtable - Mark Episode Delivery Recheck Required",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6544,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+($('Code - Check Review And Delivery Storage Configuration').first().json.review_decision_key||$('Code - Check Review And Delivery Storage Configuration').first().json.stage_run_key)+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "id": "92000000-0000-4000-8000-000000000046",
+      "name": "Airtable - Find Review Decision Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3184,
+        -1424
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all();const source=$('Code - Check Review And Delivery Storage Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};let stored={};try{stored=typeof f.result_json==='string'?JSON.parse(f.result_json):f.result_json||{};}catch{}return [{json:{...source,processing_event_found:Boolean(record),processing_event_complete:String(f.status||'').toUpperCase()==='COMPLETED',stored_stage_result:stored,stored_provider_job_id:f.provider_job_id||'',stored_drive_file_id:f.drive_file_id||''}}];"
+      },
+      "id": "92000000-0000-4000-8000-000000000047",
+      "name": "Code - Resolve Review Decision Processing Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        -1424
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000048",
+              "leftValue": "={{ $json.processing_event_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "92000000-0000-4000-8000-000000000049",
+      "name": "IF - Is Review Decision Processing Event Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3664,
+        -1424
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all();const source=$('Code - Check Review And Delivery Storage Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));return [{json:{...source,review_decision_already_processed:Boolean(record),stored_stage_result:record?.fields||record||{}}}];"
+      },
+      "id": "92000000-0000-4000-8000-000000000050",
+      "name": "Code - Evaluate Processed Review Decision Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        -1216
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000051",
+              "leftValue": "={{ $json.review_decision_already_processed === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "92000000-0000-4000-8000-000000000052",
+      "name": "IF - Was Review Decision Already Processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3904,
+        -1216
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json;return [{json:{...x,final_drive_file_id:x.existing_final_drive_file_id,final_storage_url:x.existing_final_storage_url,content_package_file_id:x.existing_content_package_file_id,delivery_reused:true}}];"
+      },
+      "id": "92000000-0000-4000-8000-000000000053",
+      "name": "Code - Normalize Reused Final Delivery Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5104,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$('Code - Check Existing Final Drive Delivery').first().json;let mp4={},copy={};try{mp4=$('Google Drive - Upload Approved Final MP4').first().json||{};}catch{}try{copy=$('Google Drive - Upload Approved Copy Package').first().json||{};}catch{}return [{json:{...x,final_drive_file_id:mp4.id||x.existing_final_drive_file_id||'',final_storage_url:mp4.webViewLink||x.existing_final_storage_url||'',content_package_file_id:copy.id||x.existing_content_package_file_id||'',delivery_reused:Boolean(x.final_mp4_exists||x.copy_package_exists),partial_delivery_reconciled:true}}];"
+      },
+      "id": "92000000-0000-4000-8000-000000000054",
+      "name": "Code - Normalize Newly Uploaded Final Delivery Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6304,
+        -944
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.review_decision_key }}",
+            "stage": "REVIEW_DECISION",
+            "status": "COMPLETED",
+            "episode_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.episode_id||'' }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "result_json": "={{ JSON.stringify({...$json,decision_result:'APPROVED'}) }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "92000000-0000-4000-8000-000000000055",
+      "name": "Airtable - Complete Approved Review Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        6784,
+        -704
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.review_decision_key }}",
+            "stage": "REVIEW_DECISION",
+            "status": "COMPLETED",
+            "episode_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.episode_id||'' }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "result_json": "={{ JSON.stringify({...$json,decision_result:'CHANGES_REQUESTED'}) }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "92000000-0000-4000-8000-000000000056",
+      "name": "Airtable - Complete Changes Requested Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4384,
+        -528
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.review_decision_key }}",
+            "stage": "REVIEW_DECISION",
+            "status": "COMPLETED",
+            "episode_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.episode_id||'' }}",
+            "asset_id": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.asset_version }}",
+            "result_json": "={{ JSON.stringify({...$json,decision_result:'REJECTED'}) }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false
+        }
+      },
+      "id": "92000000-0000-4000-8000-000000000057",
+      "name": "Airtable - Complete Rejected Review Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4384,
+        -256
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input=$input.first().json;let seeded={};try{seeded=$('Code - Check Review And Delivery Storage Configuration').first().json||seeded;}catch{}const x={...seeded,...input};const text=String(x.error?.message||x.error_message||x.message||'Boundary operation failed').replace(/(?:bearer|token|key|secret|authorization)[^\\s]*/ig,'[REDACTED]');return [{json:{workflow_name:\"Review Decision\",execution_id:$execution.id,stage:\"REVIEW_DECISION\",episode_id:x.episode_id||'',asset_id:x.asset_id||'',asset_version:Number(x.asset_version||0),stage_run_key:x.computed_stage_run_key||x.stage_run_key||'',attempt_number:Number(x.attempt_number||1),error_code:String(x.error?.code||x.error_code||'BOUNDARY_FAILURE'),error_message:text.slice(0,500),retryable:Boolean(x.retryable),test_mode:x.test_mode!==false,allow_external_writes:false,allow_error_writes:x.allow_error_writes===true,last_completed_stage:String(x.last_completed_stage||seeded.last_completed_stage||'')}}];"
+      },
+      "id": "92000000-0000-4000-8000-000000000058",
+      "name": "Code - Build Structured Review Decision Boundary Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7200,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YKuXZfayKjOvRHdR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "={{ $json.workflow_name }}",
+            "execution_id": "={{ $json.execution_id }}",
+            "stage": "={{ $json.stage }}",
+            "episode_id": "={{ $json.episode_id }}",
+            "asset_id": "={{ $json.asset_id }}",
+            "asset_version": "={{ $json.asset_version }}",
+            "stage_run_key": "={{ $json.stage_run_key }}",
+            "attempt_number": "={{ $json.attempt_number }}",
+            "error_code": "={{ $json.error_code }}",
+            "error_message": "={{ $json.error_message }}",
+            "retryable": "={{ $json.retryable }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "last_completed_stage": "={{ $json.last_completed_stage || \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "92000000-0000-4000-8000-000000000059",
+      "name": "Execute Sub-workflow - Dispatch Review Decision Failure To Error Handling",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        7440,
+        48
+      ],
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const x=$input.first().json;return [{json:{...x,error_dispatched:true}}];"
+      },
+      "id": "92000000-0000-4000-8000-000000000060",
+      "name": "Code - Return Review Decision Failure Dispatch Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7680,
+        48
+      ]
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000031",
+      "name": "Google Drive - Find Approved Copy Package By Key",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4500,
+        -780
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "query",
+        "queryString": "={{ \"appProperties has { key='delivery_key' and value='\"+String($('Crypto - Build Final Delivery Key').first().json.delivery_key).replace(/'/g,\"\\\\'\")+\"' } and appProperties has { key='delivery_artifact' and value='copy_package' } and trashed=false and '\"+$('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.final_folder_id+\"' in parents\" }}",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.drive_id }}"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $('Code - Check Review And Delivery Storage Configuration').first().json.storage_config.final_folder_id }}"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "md5Checksum",
+            "version",
+            "modifiedTime",
+            "webViewLink",
+            "appProperties",
+            "parents",
+            "driveId"
+          ],
+          "simplifyOutput": false
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput",
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000033",
+      "name": "IF - Are Drive Delivery Results Unique?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4740,
+        -760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000032",
+              "leftValue": "={{ $json.drive_delivery_results_unique === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000035",
+      "name": "IF - Does Approved Final MP4 Already Exist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5100,
+        -760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000034",
+              "leftValue": "={{ $json.final_mp4_exists === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000037",
+      "name": "IF - Does Approved Copy Package Already Exist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5820,
+        -560
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000036",
+              "leftValue": "={{ $('Code - Check Existing Final Drive Delivery').first().json.copy_package_exists === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - Receive 6 Review Decision Request": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate 6 Review Decision Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Receive Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate 6 Review Decision Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate 6 Review Decision Contract": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 6 Review Decision Contract Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 6 Review Decision Contract Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 6 Review Decision Input Hash Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 6 Review Decision Contract Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 6 Review Decision Input Hash Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash 6 Review Decision Stage Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash 6 Review Decision Stage Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 6 Review Decision Stage Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 6 Review Decision Stage Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build 6 Review Decision Stage Run Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build 6 Review Decision Stage Run Key": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Supplied 6 Review Decision Stage Key Match?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Supplied 6 Review Decision Stage Key Match?": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Review Decision Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 6 Review Decision Stage Key Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Review Decision Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Processed Review Decision Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Processed Review Decision Fixture": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Review Decision New?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Review Decision New?": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Review And Delivery Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Existing Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Bind Approval To Asset Version And Payload Hash",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Create Requested Asset Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Mark Asset Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Final Delivery Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Final Delivery Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Final Delivery Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Existing Final Delivery Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Existing Final Delivery Fixture": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Final Delivery Already Present?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Final Delivery Already Present?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Approved Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Is Approved Delivery Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Approved Delivery Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Find Approved Final Delivery By Key - MP4 Artifact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Approved Delivery Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Review And Delivery Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Review Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Review Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Review Decision Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Approved Delivery Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Asset For Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Upsert Exact Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert Exact Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Review Decision After Persistence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Review Decision After Persistence": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Existing Final Drive Delivery": {
+      "main": [
+        [
+          {
+            "node": "IF - Are Drive Delivery Results Unique?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Approved Final File Exist In Drive?": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Reused Final Delivery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Does Approved Final MP4 Already Exist?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Download Approved Working Video": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Upload Approved Final MP4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Upload Approved Final MP4": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Verify Approved Final MP4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Verify Approved Final MP4": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Approved Copy Package Already Exist?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Upload Approved Copy Package": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Verify Approved Copy Package",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Verify Approved Copy Package": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Newly Uploaded Final Delivery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Mark Approved Asset Complete": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Mark Episode Delivery Recheck Required",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Trigger - Watch Review Decisions": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate 6 Review Decision Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Processed Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Code - Evaluate Processed Review Decision Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Bind Approval To Asset Version And Payload Hash": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Final Delivery Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Create Requested Asset Version": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete Changes Requested Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Mark Asset Rejected": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete Rejected Review Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Mark Episode Delivery Recheck Required": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete Approved Review Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Review Decision Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Review Decision Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Review Decision Processing Event": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Review Decision Processing Event Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Review Decision Processing Event Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Find Processed Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Evaluate Processed Review Decision Lookup": {
+      "main": [
+        [
+          {
+            "node": "IF - Was Review Decision Already Processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Was Review Decision Already Processed?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Load Asset For Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Reused Final Delivery Result": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Mark Approved Asset Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Newly Uploaded Final Delivery Result": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Mark Approved Asset Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete Approved Review Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Approved Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete Changes Requested Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Changes Requested Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete Rejected Review Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Rejected Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return Review Decision Fallback": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Structured Review Decision Boundary Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Structured Review Decision Boundary Failure": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Dispatch Review Decision Failure To Error Handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Dispatch Review Decision Failure To Error Handling": {
+      "main": [
+        [
+          {
+            "node": "Code - Return Review Decision Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Return Review Decision Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Approved Final Delivery By Key - MP4 Artifact": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Find Approved Copy Package By Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Find Approved Copy Package By Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Existing Final Drive Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Are Drive Delivery Results Unique?": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Approved Final File Exist In Drive?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Review Decision Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Approved Final MP4 Already Exist?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Upload Approved Copy Package",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Download Approved Working Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Approved Copy Package Already Exist?": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Newly Uploaded Final Delivery Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Upload Approved Copy Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "errorWorkflow": "YKuXZfayKjOvRHdR",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

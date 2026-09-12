@@ -1,0 +1,2913 @@
+{
+  "name": "Podcast Video Automation v1 - 5 Video Rendering and QA",
+  "nodes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Execute Workflow Trigger - Receive 5 Video Rendering and QA Request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "episode_id",
+              "type": "string"
+            },
+            {
+              "name": "asset_id",
+              "type": "string"
+            },
+            {
+              "name": "asset_version",
+              "type": "number"
+            },
+            {
+              "name": "render_purpose",
+              "type": "string"
+            },
+            {
+              "name": "payload_hash",
+              "type": "string"
+            },
+            {
+              "name": "stage_run_key",
+              "type": "string"
+            },
+            {
+              "name": "test_mode",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_external_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_render",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_error_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "context_risk_review_threshold",
+              "type": "number"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "Code - Validate 5 Video Rendering and QA Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const x=raw.body||raw;const required=['episode_id','asset_id','asset_version','render_purpose','payload_hash','stage_run_key'];const missing=required.filter(k=>x[k]===undefined||x[k]===null||x[k]==='');const rawThreshold=x.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...x,test_mode:x.test_mode!==false,allow_external_writes:x.allow_external_writes===true,allow_render:x.allow_render===true,allow_error_writes:x.allow_error_writes===true,context_risk_review_threshold:Number.isFinite(threshold)?threshold:null,atomic_claim_verified:false,renderer_contract_verified:false,shotstack_caption_spike_passed:false,visual_caption_qa_verified:false,audio_not_silent_verified:false,contract_valid:missing.length===0,missing_fields:missing,provider_state:x.render_status||x.status||'configuration_hold',stage_episode_id:x.episode_id,stage_name:'video_rendering_qa',stage_asset_id:x.asset_id||'none',stage_asset_version:Number(x.asset_version||1)}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "name": "IF - Is 5 Video Rendering and QA Contract Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        540,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.contract_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "name": "Edit Fields - Return 5 Video Rendering and QA Contract Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        160
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'CONTRACT_FAILED'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "name": "Code - Build 5 Video Rendering and QA Input Hash Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const fields=[\"episode_id\",\"asset_id\",\"asset_version\",\"render_purpose\",\"payload_hash\"]; const payload=Object.fromEntries(fields.map(k=>[k,x[k]])); const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v; return [{json:{...x,input_hash_source:JSON.stringify(stable(payload))}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "name": "Crypto - Hash 5 Video Rendering and QA Stage Input",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -80
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.input_hash_source }}",
+        "dataPropertyName": "computed_input_hash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000008",
+      "name": "Code - Build 5 Video Rendering and QA Stage Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; return [{json:{...x,stage_key_source:[x.stage_episode_id,x.stage_name,x.stage_asset_id,x.stage_asset_version,x.computed_input_hash].join('|')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000009",
+      "name": "Crypto - Build 5 Video Rendering and QA Stage Run Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -80
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.stage_key_source }}",
+        "dataPropertyName": "computed_stage_run_key",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "name": "IF - Does Supplied 5 Video Rendering and QA Stage Key Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000010",
+              "leftValue": "={{ $json.stage_run_key === $json.computed_stage_run_key }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "name": "Edit Fields - Return 5 Video Rendering and QA Stage Key Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2000,
+        100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'STAGE_KEY_MISMATCH'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "Code - Check 5 Video Rendering and QA Stage Dedupe Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const keys=Array.isArray(x.existing_stage_run_keys)?x.existing_stage_run_keys:[]; return [{json:{...x,stage_already_complete:keys.includes(x.computed_stage_run_key),dedupe_checked:true}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "IF - Is 5 Video Rendering and QA Stage Already Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000014",
+              "leftValue": "={{ $json.stage_already_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000016",
+      "name": "Edit Fields - Return Existing 5 Video Rendering and QA Stage Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2480,
+        -20
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'IDEMPOTENT_REPLAY',paid_calls_executed:0,external_writes_executed:0}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000018",
+      "name": "IF - Is 5 Video Rendering and QA Spend Or Write Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2480,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000017",
+              "leftValue": "={{ $json.allow_render === true && $json.allow_external_writes === true && $json.test_mode === false && $json.atomic_claim_verified === true && $json.render_contract_hash_verified === true && $json.renderer_contract_verified === true && $json.shotstack_caption_spike_passed === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000019",
+      "name": "Edit Fields - Return 5 Video Rendering and QA Configuration Hold",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2720,
+        -60
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'CONFIGURATION_HOLD',paid_calls_executed:0,external_writes_executed:0,next_stage:null}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000020",
+      "name": "HTTP Request - Submit Approved Video Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2720,
+        -300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/edit/stage/render",
+        "authentication": "genericCredentialType",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.shotstack_request) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000024",
+      "name": "Switch - Route 5 Video Rendering and QA Provider State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        -300
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000021",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "done",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "done"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000022",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "failed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000023",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "processing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "processing"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000025",
+      "name": "Edit Fields - Return 5 Video Rendering and QA Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3440,
+        -300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'SKELETON_READY',provider_execution_blocked:true}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000026",
+      "name": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3200,
+        -80
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'PROVIDER_FAILED',retryable:false}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000058",
+      "name": "Code - Check Render Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"assets\",\"events\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"drive_id\",\"working_folder_id\",\"table:assets\",\"table:events\",\"media_probe_url\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\",\"drive\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000060",
+      "name": "IF - Is Render Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2660,
+        -440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000059",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000061",
+      "name": "Airtable - Load Asset Render Contract",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2900,
+        -440
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "filterByFormula": "={{ \"AND({asset_id}='\"+$('Code - Check Render Storage Configuration').first().json.asset_id+\"',{asset_version}=\"+$('Code - Check Render Storage Configuration').first().json.asset_version+\")\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000062",
+      "name": "Google Drive - Download Render Contract",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3140,
+        -440
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Airtable - Load Asset Render Contract').first().json.render_contract_file_id || $('Airtable - Load Asset Render Contract').first().json.fields?.render_contract_file_id || '' }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000063",
+      "name": "Code - Restore Render Context After Storage Loads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3380,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item=$input.first();const source=$('Code - Evaluate Existing Render Lookup').first().json;let contract=null,parseError='';try{const buffer=await this.helpers.getBinaryDataBuffer(0,'data');contract=JSON.parse(buffer.toString('utf8').replace(/^\\uFEFF/,''));}catch(e){parseError=String(e.message||e);}const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v;const canonical=contract?JSON.stringify(stable(contract)):'';return [{json:{...source,render_contract:contract,render_contract_json:canonical,expected_render_contract_hash:String(source.payload_hash||source.render_contract_hash||source.stored_stage_result?.payload_hash||''),render_contract_parsed:Boolean(contract),render_contract_parse_error:parseError,render_purpose:source.render_purpose||contract?.render_purpose||'review'},binary:item.binary}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000064",
+      "name": "Airtable - Save Render Job ID Immediately",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3440,
+        -520
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Render Storage Configuration').first().json.asset_id+'|'+$('Code - Check Render Storage Configuration').first().json.asset_version }}",
+            "asset_id": "={{ $('Code - Check Render Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Render Storage Configuration').first().json.asset_version }}",
+            "render_job_id": "={{ $('Code - Parse Render Submission Response').first().json.render_job_id }}",
+            "status": "RENDERING",
+            "render_key": "={{ $('Crypto - Build Render Key').first().json.render_key }}"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "render_job_id",
+              "displayName": "render_job_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "render_key",
+              "displayName": "render_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000065",
+      "name": "Google Drive - Upload Working Video Version",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3680,
+        -520
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "data",
+        "name": "={{ $('Code - Check Render Storage Configuration').first().json.asset_id+'-v'+$('Code - Check Render Storage Configuration').first().json.asset_version+'-working.mp4' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.drive_id }}"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.working_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false,
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "webViewLink",
+            "version"
+          ]
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000066",
+      "name": "Google Drive - Verify Working Video Version",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3920,
+        -520
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Google Drive - Upload Working Video Version').first().json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000067",
+      "name": "Airtable - Create Asset Review Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4160,
+        -520
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ $('Code - Check Render Storage Configuration').first().json.asset_id+'|'+$('Code - Check Render Storage Configuration').first().json.asset_version }}",
+            "asset_id": "={{ $('Code - Check Render Storage Configuration').first().json.asset_id }}",
+            "asset_version": "={{ $('Code - Check Render Storage Configuration').first().json.asset_version }}",
+            "preview_drive_file_id": "={{ $('Google Drive - Upload Working Video Version').first().json.id || '' }}",
+            "qa_status": "={{ $json.qa_status || \"NEEDS_REVIEW\" }}",
+            "review_status": "NEEDS_REVIEW",
+            "status": "NEEDS_REVIEW",
+            "allow_error_writes": "={{ $('Code - Check Render Storage Configuration').first().json.allow_error_writes === true }}",
+            "context_risk_review_threshold": "={{ $('Code - Check Render Storage Configuration').first().json.context_risk_review_threshold ?? '' }}"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "preview_drive_file_id",
+              "displayName": "preview_drive_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "qa_status",
+              "displayName": "qa_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_status",
+              "displayName": "review_status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "allow_error_writes",
+              "displayName": "allow_error_writes",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "context_risk_review_threshold",
+              "displayName": "context_risk_review_threshold",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000068",
+      "name": "Code - Restore Render Result After Persistence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Check Render Storage Configuration').first().json;return [{json:{...source,render_persistence:response}}];"
+      }
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000009",
+      "name": "Airtable - Find Existing Render By Key",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3140,
+        -240
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "filterByFormula": "={{ \"{render_key}='\"+$('Crypto - Build Render Key').first().json.render_key+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000012",
+      "name": "Airtable - Find Video Render Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2900,
+        -1540
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+($('Code - Check Render Storage Configuration').first().json.computed_stage_run_key||$('Code - Check Render Storage Configuration').first().json.stage_run_key)+\"'\" }}",
+        "returnAll": false,
+        "options": {},
+        "limit": 1
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000013",
+      "name": "Code - Resolve Video Render Processing Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3140,
+        -1540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all();const source=$('Code - Check Render Storage Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};let stored={};try{stored=typeof f.result_json==='string'?JSON.parse(f.result_json):f.result_json||{};}catch{}return [{json:{...source,processing_event_found:Boolean(record),processing_event_complete:String(f.status||'').toUpperCase()==='COMPLETED',stored_stage_result:stored,stored_provider_job_id:f.provider_job_id||'',stored_drive_file_id:f.drive_file_id||''}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000015",
+      "name": "IF - Is Video Render Processing Event Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3380,
+        -1540
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000014",
+              "leftValue": "={{ $json.processing_event_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000016",
+      "name": "Airtable - Complete Video Render Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4880,
+        -1240
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Render Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Render Storage Configuration').first().json.computed_stage_run_key||$('Code - Check Render Storage Configuration').first().json.stage_run_key }}",
+            "stage": "VIDEO_RENDERING_QA",
+            "status": "COMPLETED",
+            "episode_id": "={{ $('Code - Check Render Storage Configuration').first().json.episode_id||'' }}",
+            "asset_id": "={{ $('Code - Check Render Storage Configuration').first().json.asset_id||'' }}",
+            "asset_version": "={{ $('Code - Check Render Storage Configuration').first().json.asset_version||'' }}",
+            "result_json": "={{ JSON.stringify($json) }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000017",
+      "name": "Code - Build Render Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3860,
+        -1540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,render_key_source:[x.asset_id,x.asset_version,x.render_purpose,x.payload_hash].join('|')}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000018",
+      "name": "Crypto - Build Render Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        4100,
+        -1540
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "dataPropertyName": "render_key",
+        "encoding": "hex",
+        "value": "={{ $json.render_key_source }}"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000019",
+      "name": "Code - Evaluate Existing Render Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3380,
+        -980
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all();const source=$('Crypto - Build Render Key').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};const status=String(f.status||'').toUpperCase();const job=String(f.render_job_id||'');return [{json:{...source,existing_render_found:Boolean(record),existing_render_complete:Boolean(record)&&status==='NEEDS_REVIEW'&&Boolean(f.preview_drive_file_id),existing_render_resumable:Boolean(record)&&['RENDERING','QUEUED','PROCESSING'].includes(status)&&Boolean(job),render_job_id:job,stored_render_status:status,stored_stage_result:f}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000021",
+      "name": "IF - Is Existing Render Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3620,
+        -980
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000020",
+              "leftValue": "={{ $json.existing_render_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000022",
+      "name": "Code - Parse Render Submission Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        -520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r=$input.first().json;const source=$('IF - Is 5 Video Rendering and QA Spend Or Write Allowed?').item.json;const id=String(r.response?.id||'');const accepted=r.success===true&&Boolean(id);return [{json:{...source,render_key:source.render_key,render_job_id:id,render_submission_accepted:accepted,provider_response:r,provider_state:accepted?'queued':'failed',last_completed_stage:accepted?'RENDER_SUBMITTED':source.last_completed_stage}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000024",
+      "name": "IF - Was Render Submission Accepted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3200,
+        -520
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000023",
+              "leftValue": "={{ $json.render_submission_accepted === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000025",
+      "name": "Code - Initialize Bounded Render Poll",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -800
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,poll_count:Number(x.poll_count||0),poll_started_at_ms:Number(x.poll_started_at_ms||Date.now()),poll_wait_seconds:Number(x.poll_wait_seconds||10),poll_budget_remaining:true}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000026",
+      "name": "Wait - Pause Before Render Status Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3920,
+        -800
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.poll_wait_seconds }}",
+        "unit": "seconds",
+        "options": {}
+      },
+      "webhookId": "049376f0-f86d-41f7-95cf-a2ba12fd2494"
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000027",
+      "name": "HTTP Request - Read Video Render Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4160,
+        -800
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.shotstack.io/edit/stage/render/'+encodeURIComponent($json.render_job_id) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000028",
+      "name": "Code - Parse Video Render Status Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -800
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r=$input.first().json;const state=$('Wait - Pause Before Render Status Check').item.json;const body=r.response||{};const raw=String(body.status||'').toLowerCase();const processing=['queued','fetching','preprocessing','rendering','saving'].includes(raw);const provider_state=raw==='done'?'done':raw==='failed'?'failed':processing?'processing':'unknown';const url=String(body.url||'');const count=Number(state.poll_count||0)+1,elapsed=Date.now()-Number(state.poll_started_at_ms||Date.now()),schedule=[10,20,40,60];const doneValid=provider_state!=='done'||(/^https:\\/\\//i.test(url)&&String(body.id||'')===String(state.render_job_id||''));return [{json:{...state,provider_response:r,provider_state:doneValid?provider_state:'failed',render_error:body.error||(!doneValid?'done_response_invalid':''),render_url:doneValid?url:'',poll_count:count,poll_elapsed_ms:elapsed,poll_wait_seconds:schedule[Math.min(count,3)],poll_budget_remaining:elapsed<1200000&&count<22}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000030",
+      "name": "IF - Is Render Poll Budget Remaining?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4880,
+        -700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000029",
+              "leftValue": "={{ $json.poll_budget_remaining === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000031",
+      "name": "HTTP Request - Download Rendered MP4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4880,
+        -940
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.render_url }}",
+        "authentication": "none",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000032",
+      "name": "Crypto - Hash Rendered MP4 Binary",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        5120,
+        -940
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": true,
+        "dataPropertyName": "working_video_checksum",
+        "encoding": "hex",
+        "binaryPropertyName": "data"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000033",
+      "name": "Code - Check Downloaded MP4 And Caption Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5360,
+        -940
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item=$input.first();const source=$('Code - Parse Video Render Status Response').item.json;const groups=source.render_contract?.caption_groups||[];let buffer=null,error='';try{buffer=await this.helpers.getBinaryDataBuffer(0,'data');}catch(e){error=String(e.message||e);}const ftyp=Boolean(buffer&&buffer.length>=8&&buffer.subarray(4,8).toString('ascii')==='ftyp');const lineWordCounts=groups.flatMap(g=>(g.lines||[]).map(l=>String(l).trim().split(/\\s+/).filter(Boolean).length));const groupWordCounts=groups.map(g=>(g.words||[]).length);const timings=groups.flatMap(g=>g.words||[]);const durationMs=Number(source.render_contract?.source_end_ms)-Number(source.render_contract?.source_start_ms);const timingValid=timings.every((word,i)=>Number(word.start_ms)>=0&&Number(word.end_ms)>Number(word.start_ms)&&Number(word.end_ms)<=durationMs&&(!i||Number(word.start_ms)>=Number(timings[i-1].start_ms)));const qa={binary_present:Boolean(buffer),binary_nonempty:Boolean(buffer?.length),ftyp_signature_valid:ftyp,sha256_present:Boolean(item.json.working_video_checksum),caption_groups_present:groups.length>0,caption_group_limit_ok:groupWordCounts.every(n=>n<=8),caption_line_limit_ok:lineWordCounts.every(n=>n<=4),caption_line_count_ok:groups.every(g=>(g.lines||[]).length<=2),caption_timing_in_bounds:timingValid};const valid=Object.values(qa).every(v=>v===true);return [{json:{...source,working_video_checksum:item.json.working_video_checksum,local_qa:qa,local_qa_error:error,binary_contract_valid:qa.binary_present&&qa.binary_nonempty&&qa.ftyp_signature_valid&&qa.sha256_present,caption_contract_valid:qa.caption_groups_present&&qa.caption_group_limit_ok&&qa.caption_line_limit_ok&&qa.caption_line_count_ok&&qa.caption_timing_in_bounds,local_render_qa_valid:valid},binary:item.binary}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000035",
+      "name": "IF - Did Local Render QA Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5600,
+        -940
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000034",
+              "leftValue": "={{ $json.local_render_qa_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000036",
+      "name": "HTTP Request - Probe Downloaded Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        5840,
+        -940
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.shotstack.io/edit/stage/probe/'+encodeURIComponent($json.render_url) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_SHOTSTACK_CREDENTIAL",
+          "name": "Shotstack API"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000037",
+      "name": "Code - Validate Media Probe And Caption QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6080,
+        -940
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const probe=$input.first().json;const video=$('Code - Check Downloaded MP4 And Caption Contract').first();const source=video.json;const metadata=probe.response?.metadata;const streams=Array.isArray(metadata?.streams)?metadata.streams:[];const format=metadata?.format||{};const videoStream=streams.find(s=>s.codec_type==='video'&&String(s.codec_name||'').toLowerCase()==='h264'&&Number(s.width)===1080&&Number(s.height)===1920);const audioStream=streams.find(s=>s.codec_type==='audio'&&String(s.codec_name||'').toLowerCase()==='aac');const duration=Number(format.duration),size=Number(format.size),min=Number(source.render_contract?.duration_min_seconds),max=Number(source.render_contract?.duration_max_seconds);const qa={probe_success:probe.success===true&&Boolean(metadata),format_mp4:String(format.format_name||'').toLowerCase().includes('mp4'),duration_inclusive:Number.isFinite(duration)&&Number.isFinite(min)&&Number.isFinite(max)&&duration>=min&&duration<=max,size_positive_integer:Number.isInteger(size)&&size>0,h264_1080x1920:Boolean(videoStream),aac_audio_present:Boolean(audioStream),download_ftyp_valid:source.local_qa?.ftyp_signature_valid===true,download_sha256_present:Boolean(source.working_video_checksum),audio_not_silent_verified:source.audio_not_silent_verified===true,visual_caption_qa_verified:source.visual_caption_qa_verified===true,caption_timing_visual_verified:source.caption_timing_visual_verified===true};const valid=Object.values(qa).every(v=>v===true);return [{json:{...source,media_probe:probe,deterministic_media_qa:qa,qa_status:valid?'PASS':'HELD_RUNTIME_EVIDENCE',automated_qa_passed:valid,runtime_qa_hold:valid?'':'TST-MEDIA-01 and TST-SHOT-01 must prove silence and visual caption behavior'},binary:video.binary}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000039",
+      "name": "IF - Did Automated Render QA Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6320,
+        -940
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000038",
+              "leftValue": "={{ $json.automated_qa_passed === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000042",
+      "name": "Switch - Route Verified Render Purpose",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        4400,
+        -940
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "92000000-0000-4000-8000-000000000040",
+                    "leftValue": "={{ $json.render_purpose }}",
+                    "rightValue": "review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "review"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "92000000-0000-4000-8000-000000000041",
+                    "leftValue": "={{ $json.render_purpose }}",
+                    "rightValue": "final",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "final"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000043",
+      "name": "Code - Build Structured Video Rendering And QA Boundary Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6800,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input=$input.first().json;let seeded={};try{seeded=$('Code - Check Render Storage Configuration').first().json||seeded;}catch{}const x={...seeded,...input};const text=String(x.error?.message||x.error_message||x.message||'Boundary operation failed').replace(/(?:bearer|token|key|secret|authorization)[^\\s]*/ig,'[REDACTED]');return [{json:{workflow_name:\"Video Rendering And QA\",execution_id:$execution.id,stage:\"VIDEO_RENDERING_QA\",episode_id:x.episode_id||'',asset_id:x.asset_id||'',asset_version:Number(x.asset_version||0),stage_run_key:x.computed_stage_run_key||x.stage_run_key||'',attempt_number:Number(x.attempt_number||1),error_code:String(x.error?.code||x.error_code||'BOUNDARY_FAILURE'),error_message:text.slice(0,500),retryable:Boolean(x.retryable),test_mode:x.test_mode!==false,allow_external_writes:false,allow_error_writes:x.allow_error_writes===true,last_completed_stage:String(x.last_completed_stage||seeded.last_completed_stage||'')}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000044",
+      "name": "Execute Sub-workflow - Dispatch Video Rendering And QA Failure To Error Handling",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        7040,
+        -40
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YKuXZfayKjOvRHdR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "={{ $json.workflow_name }}",
+            "execution_id": "={{ $json.execution_id }}",
+            "stage": "={{ $json.stage }}",
+            "episode_id": "={{ $json.episode_id }}",
+            "asset_id": "={{ $json.asset_id }}",
+            "asset_version": "={{ $json.asset_version }}",
+            "stage_run_key": "={{ $json.stage_run_key }}",
+            "attempt_number": "={{ $json.attempt_number }}",
+            "error_code": "={{ $json.error_code }}",
+            "error_message": "={{ $json.error_message }}",
+            "retryable": "={{ $json.retryable }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "last_completed_stage": "={{ $json.last_completed_stage || \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000045",
+      "name": "Code - Return Video Rendering And QA Failure Dispatch Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7280,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,error_dispatched:true}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000002",
+      "name": "IF - Is Stored Render Job Resumable?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3860,
+        -900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.existing_render_resumable === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000003",
+      "name": "Code - Restore Stored Render Poll Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4100,
+        -900
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,render_job_id:x.render_job_id||x.stored_stage_result?.render_job_id||'',render_purpose:x.render_purpose||x.stored_stage_result?.render_purpose||'review',poll_count:0,poll_started_at_ms:Date.now(),poll_wait_seconds:10,poll_budget_remaining:true,resumed_stored_render_job:true}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000004",
+      "name": "Code - Restore Submitted Render Poll Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const saved=$input.first().json;const source=$('Code - Parse Render Submission Response').first().json;return [{json:{...source,render_job_record:saved,poll_count:0,poll_started_at_ms:Date.now(),poll_wait_seconds:10,poll_budget_remaining:true,resumed_stored_render_job:false}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000005",
+      "name": "Code - Restore Verified Working Video Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -620
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item=$input.first();const source=$('Code - Validate Media Probe And Caption QA').first().json;const uploaded=$('Google Drive - Upload Working Video Version').first().json;return [{json:{...source,working_video_file_id:uploaded.id||source.working_video_file_id||'',working_video_verification:item.json,render_purpose:source.render_purpose||'review',qa_status:source.qa_status||'FAIL'},binary:item.binary}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000028",
+      "name": "Crypto - Verify Downloaded Render Contract Hash",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        2500,
+        -1180
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.render_contract_json }}",
+        "dataPropertyName": "downloaded_render_contract_hash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000029",
+      "name": "Code - Validate Render Contract And Build Shotstack Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2740,
+        -1180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json,c=x.render_contract||{};const expected=String(x.expected_render_contract_hash||'').toLowerCase(),actual=String(x.downloaded_render_contract_hash||'').toLowerCase();const hashOk=Boolean(expected)&&expected===actual;const start=Number(c.source_start_ms),end=Number(c.source_end_ms),duration=(end-start)/1000;const src=String(c.source_media_url||'');const style=c.caption_style||{};const request={timeline:{tracks:[{clips:[{asset:{type:'rich-caption',src:'alias://source',font:{family:String(style.fontFamily||'Arial'),size:52,color:'#ffffff',weight:700},stroke:{width:3,color:'#000000',opacity:1},shadow:{offsetX:0,offsetY:2,blur:3,color:'#000000',opacity:0.6},animation:{style:'highlight'},active:{font:{color:String(style.activeColor||'#FFD400'),opacity:1}}},start:0,length:'end',width:900,height:360,position:'bottom',offset:{x:0,y:0.12}}]},{clips:[{alias:'source',asset:{type:'video',src,trim:start/1000},start:0,length:duration,fit:'cover'}]}]},output:{format:'mp4',size:{width:1080,height:1920},mute:false}};const shapeOk=c.contract_version==='podcast-render-contract-v1'&&/^https:\\/\\//i.test(src)&&Number.isFinite(duration)&&duration>0&&Array.isArray(c.caption_groups)&&c.caption_groups.length>0;return [{json:{...x,render_contract_hash_verified:hashOk,render_contract_shape_valid:shapeOk,shotstack_request:request,renderer_contract_verified:x.renderer_contract_verified===true,shotstack_caption_spike_passed:x.shotstack_caption_spike_passed===true,runtime_hold:(!hashOk||!shapeOk)?'render_contract_invalid':x.shotstack_caption_spike_passed===true?'':'TST-SHOT-01-RICH-CAPTION'}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000030",
+      "name": "Code - Hold Ambiguous Shotstack Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        -120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const e=$input.first().json;const source=$('IF - Is 5 Video Rendering and QA Spend Or Write Allowed?').item.json;const status=Number(e.statusCode||e.error?.statusCode||0);const ambiguous=status===0||status>=500;return [{json:{...source,error:e,provider_state:ambiguous?'HELD_AMBIGUOUS':'FAILED',error_code:ambiguous?'SHOTSTACK_SUBMIT_AMBIGUOUS':'SHOTSTACK_SUBMIT_REJECTED',retryable:false,operator_reconciliation_required:ambiguous}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - Receive 5 Video Rendering and QA Request": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate 5 Video Rendering and QA Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate 5 Video Rendering and QA Contract": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 5 Video Rendering and QA Contract Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 5 Video Rendering and QA Contract Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 5 Video Rendering and QA Input Hash Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Contract Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 5 Video Rendering and QA Input Hash Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash 5 Video Rendering and QA Stage Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash 5 Video Rendering and QA Stage Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 5 Video Rendering and QA Stage Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 5 Video Rendering and QA Stage Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build 5 Video Rendering and QA Stage Run Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build 5 Video Rendering and QA Stage Run Key": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Supplied 5 Video Rendering and QA Stage Key Match?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Supplied 5 Video Rendering and QA Stage Key Match?": {
+      "main": [
+        [
+          {
+            "node": "Code - Check 5 Video Rendering and QA Stage Dedupe Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Stage Key Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check 5 Video Rendering and QA Stage Dedupe Fixture": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 5 Video Rendering and QA Stage Already Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 5 Video Rendering and QA Stage Already Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 5 Video Rendering and QA Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Check Render Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 5 Video Rendering and QA Spend Or Write Allowed?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Submit Approved Video Render",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Submit Approved Video Render": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Render Submission Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Hold Ambiguous Shotstack Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route 5 Video Rendering and QA Provider State": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Download Rendered MP4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Is Render Poll Budget Remaining?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Render Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Render Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Render Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Video Render Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Asset Render Contract": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Existing Render By Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Download Render Contract": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Render Context After Storage Loads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Render Context After Storage Loads": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Verify Downloaded Render Contract Hash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Save Render Job ID Immediately": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Submitted Render Poll Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Upload Working Video Version": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Verify Working Video Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Verify Working Video Version": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Verified Working Video Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Create Asset Review Record": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Render Result After Persistence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Render Result After Persistence": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete Video Render Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Existing Render By Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Evaluate Existing Render Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Video Render Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Video Render Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Video Render Processing Event": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Video Render Processing Event Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Video Render Processing Event Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 5 Video Rendering and QA Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Build Render Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete Video Render Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Render Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Render Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Render Key": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Load Asset Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Evaluate Existing Render Lookup": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Existing Render Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Existing Render Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 5 Video Rendering and QA Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive - Download Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Render Submission Response": {
+      "main": [
+        [
+          {
+            "node": "IF - Was Render Submission Accepted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Was Render Submission Accepted?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Save Render Job ID Immediately",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Initialize Bounded Render Poll": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before Render Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Pause Before Render Status Check": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Read Video Render Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Read Video Render Status": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Video Render Status Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Video Render Status Response": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route 5 Video Rendering and QA Provider State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Render Poll Budget Remaining?": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before Render Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Download Rendered MP4": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash Rendered MP4 Binary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash Rendered MP4 Binary": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Downloaded MP4 And Caption Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Downloaded MP4 And Caption Contract": {
+      "main": [
+        [
+          {
+            "node": "IF - Did Local Render QA Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Did Local Render QA Pass?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Probe Downloaded Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Probe Downloaded Video": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate Media Probe And Caption QA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate Media Probe And Caption QA": {
+      "main": [
+        [
+          {
+            "node": "IF - Did Automated Render QA Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Did Automated Render QA Pass?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Upload Working Video Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route Verified Render Purpose": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Create Asset Review Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Restore Render Result After Persistence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return 5 Video Rendering and QA Provider Failure": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Structured Video Rendering And QA Boundary Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Structured Video Rendering And QA Boundary Failure": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Dispatch Video Rendering And QA Failure To Error Handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Dispatch Video Rendering And QA Failure To Error Handling": {
+      "main": [
+        [
+          {
+            "node": "Code - Return Video Rendering And QA Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Return Video Rendering And QA Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Stored Render Job Resumable?": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Stored Render Poll Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Is 5 Video Rendering and QA Spend Or Write Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Stored Render Poll Context": {
+      "main": [
+        [
+          {
+            "node": "Wait - Pause Before Render Status Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Submitted Render Poll Context": {
+      "main": [
+        [
+          {
+            "node": "Code - Initialize Bounded Render Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Verified Working Video Context": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route Verified Render Purpose",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Verify Downloaded Render Contract Hash": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate Render Contract And Build Shotstack Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate Render Contract And Build Shotstack Request": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Stored Render Job Resumable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Hold Ambiguous Shotstack Submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return 5 Video Rendering and QA Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "errorWorkflow": "YKuXZfayKjOvRHdR"
+  },
+  "active": false
+}

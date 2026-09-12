@@ -1,0 +1,22 @@
+# Secrets — never commit these
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# n8n local data
+.n8n/
+*.sqlite
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Scratch
+tmp/
+temp/
+*.log

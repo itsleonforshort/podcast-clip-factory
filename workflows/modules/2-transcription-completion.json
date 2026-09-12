@@ -1,0 +1,2554 @@
+{
+  "name": "Podcast Video Automation v1 - 2 Transcription Completion",
+  "nodes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Execute Workflow Trigger - Receive 2 Transcription Completion Request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "episode_id",
+              "type": "string"
+            },
+            {
+              "name": "transcription_job_id",
+              "type": "string"
+            },
+            {
+              "name": "stage_run_key",
+              "type": "string"
+            },
+            {
+              "name": "test_mode",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_external_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_transcription_read",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_error_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "context_risk_review_threshold",
+              "type": "number"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "Code - Validate 2 Transcription Completion Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const x=raw.body||raw;const required=['episode_id','transcription_job_id','stage_run_key'];const missing=required.filter(k=>x[k]===undefined||x[k]===null||x[k]==='');const rawThreshold=x.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...x,test_mode:x.test_mode!==false,allow_external_writes:x.allow_external_writes===true,allow_transcription_read:x.allow_transcription_read===true,allow_error_writes:x.allow_error_writes===true,context_risk_review_threshold:Number.isFinite(threshold)?threshold:null,contract_valid:missing.length===0,missing_fields:missing,provider_state:x.transcription_status||x.status||'configuration_hold',stage_episode_id:x.episode_id,stage_name:'transcription_completion',stage_asset_id:x.asset_id||'none',stage_asset_version:Number(x.asset_version||1)}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "name": "IF - Is 2 Transcription Completion Contract Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        540,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.contract_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "name": "Edit Fields - Return 2 Transcription Completion Contract Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        160
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'CONTRACT_FAILED'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "name": "Code - Build 2 Transcription Completion Input Hash Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const fields=[\"episode_id\",\"transcription_job_id\"]; const payload=Object.fromEntries(fields.map(k=>[k,x[k]])); const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v; return [{json:{...x,input_hash_source:JSON.stringify(stable(payload))}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "name": "Crypto - Hash 2 Transcription Completion Stage Input",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -80
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.input_hash_source }}",
+        "dataPropertyName": "computed_input_hash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000008",
+      "name": "Code - Build 2 Transcription Completion Stage Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; return [{json:{...x,stage_key_source:[x.stage_episode_id,x.stage_name,x.stage_asset_id,x.stage_asset_version,x.computed_input_hash].join('|')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000009",
+      "name": "Crypto - Build 2 Transcription Completion Stage Run Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -80
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.stage_key_source }}",
+        "dataPropertyName": "computed_stage_run_key",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "name": "IF - Does Supplied 2 Transcription Completion Stage Key Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000010",
+              "leftValue": "={{ $json.stage_run_key === $json.computed_stage_run_key }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "name": "Edit Fields - Return 2 Transcription Completion Stage Key Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2000,
+        100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'STAGE_KEY_MISMATCH'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "Code - Check 2 Transcription Completion Stage Dedupe Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const keys=Array.isArray(x.existing_stage_run_keys)?x.existing_stage_run_keys:[]; return [{json:{...x,stage_already_complete:keys.includes(x.computed_stage_run_key),dedupe_checked:true}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "IF - Is 2 Transcription Completion Stage Already Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000014",
+              "leftValue": "={{ $json.stage_already_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000016",
+      "name": "Edit Fields - Return Existing 2 Transcription Completion Stage Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2480,
+        -20
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'IDEMPOTENT_REPLAY',paid_calls_executed:0,external_writes_executed:0}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000018",
+      "name": "IF - Is 2 Transcription Completion Spend Or Write Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2480,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000017",
+              "leftValue": "={{ $json.allow_transcription_read === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000019",
+      "name": "Edit Fields - Return 2 Transcription Completion Configuration Hold",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2720,
+        -60
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'CONFIGURATION_HOLD',paid_calls_executed:0,external_writes_executed:0,next_stage:null}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000020",
+      "name": "HTTP Request - Read Existing AssemblyAI Transcript",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2720,
+        -300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.assemblyai.com/v2/transcript/' + encodeURIComponent($json.transcription_job_id) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ASSEMBLYAI_CREDENTIAL",
+          "name": "AssemblyAI API"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000024",
+      "name": "Switch - Route 2 Transcription Completion Provider State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        -300
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000021",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "completed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000022",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "error"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000023",
+                    "leftValue": "={{ ['queued','processing'].includes(String($json.provider_state || $json.status || '').toLowerCase()) ? 'processing' : String($json.provider_state || $json.status || 'configuration_hold').toLowerCase() }}",
+                    "rightValue": "processing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "processing"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000025",
+      "name": "Edit Fields - Return 2 Transcription Completion Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3440,
+        -300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'SKELETON_READY',provider_execution_blocked:true}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000026",
+      "name": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3200,
+        -80
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'PROVIDER_FAILED',retryable:false}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000027",
+      "name": "Code - Build Start Transcript Analysis Input Hash Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const payload={episode_id:x.episode_id}; const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v; return [{json:{...x,next_stage_input_hash_source:JSON.stringify(stable(payload))}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000028",
+      "name": "Crypto - Hash Start Transcript Analysis Stage Input",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        -300
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.next_stage_input_hash_source }}",
+        "dataPropertyName": "computed_next_stage_input_hash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000029",
+      "name": "Code - Build Start Transcript Analysis Stage Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; return [{json:{...x,next_stage_key_source:[x.episode_id,'transcript_analysis','none',1,x.computed_next_stage_input_hash].join('|')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000030",
+      "name": "Crypto - Build Start Transcript Analysis Stage Run Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -300
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.next_stage_key_source }}",
+        "dataPropertyName": "computed_next_stage_run_key",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000031",
+      "name": "Execute Sub-workflow - Start Transcript Analysis",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4640,
+        -300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_SUBWORKFLOW_ID_1",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $json.episode_id }}",
+            "stage_run_key": "={{ $json.computed_next_stage_run_key }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_openai": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "context_risk_review_threshold": "={{ $json.context_risk_review_threshold }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000032",
+      "name": "Code - Normalize AssemblyAI Callback Or Recovery",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const x=raw.body||raw;const transcription_job_id=x.transcription_job_id||x.transcript_id||x.provider_job_id||x.id||'';const episode_id=x.episode_id||x.metadata?.episode_id||x.record?.episode_id||'';const callback=Boolean(raw.body);const callbackAllowed=false;const rawThreshold=x.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...x,episode_id,transcription_job_id,provider_state:String(x.status||x.transcription_status||x.state||'configuration_hold').toLowerCase(),stage_run_key:x.stage_run_key||'',test_mode:x.test_mode!==false,allow_external_writes:x.allow_external_writes===true,allow_transcription_read:x.allow_transcription_read===true,allow_error_writes:x.allow_error_writes===true,context_risk_review_threshold:Number.isFinite(threshold)?threshold:null,normalization_source:callback?'disabled_callback':'authenticated_polling',callback_allowed:callbackAllowed,last_completed_stage:String(x.last_completed_stage||'TRANSCRIPTION_SUBMITTED')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000033",
+      "name": "Webhook - Receive AssemblyAI Completion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "podcast-video-automation-v1-transcription-completion",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "e3f31973-fc70-46e1-bb19-0d4c480b387c",
+      "disabled": true,
+      "notes": "Disabled until X-AssemblyAI-Webhook-Secret can be injected from n8n secret storage. Authenticated status polling is the active design."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000034",
+      "name": "Schedule Trigger - Recover Stalled Transcriptions",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        },
+        "skipDurableScheduler": false,
+        "misfirePolicy": "skip",
+        "misfireGraceSeconds": 0
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000027",
+      "name": "Code - Check Transcription Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"episodes\",\"events\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"drive_id\",\"working_folder_id\",\"table:episodes\",\"table:events\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\",\"drive\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000029",
+      "name": "IF - Is Transcription Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2660,
+        -440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000028",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000030",
+      "name": "Airtable - Load Episode For Transcription Completion",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2900,
+        -440
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "filterByFormula": "={{ \"{episode_id}='\" + $('Code - Check Transcription Storage Configuration').first().json.episode_id + \"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000031",
+      "name": "Code - Restore Transcription Context After Episode Load",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3140,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Check Transcription Storage Configuration').first().json;const fields=response.fields||response||{};const bool=value=>value===true||String(value||'').trim().toLowerCase()==='true';const rawThreshold=fields.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...source,allow_error_writes:fields.allow_error_writes===undefined?source.allow_error_writes===true:bool(fields.allow_error_writes),context_risk_review_threshold:Number.isFinite(threshold)?threshold:source.context_risk_review_threshold,last_completed_stage:String(fields.last_completed_stage||source.last_completed_stage||'TRANSCRIPTION_SUBMITTED'),episode_record:fields,episode_record_id:String(response.id||'')}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000032",
+      "name": "Google Drive - Save Normalized Transcript JSON",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3440,
+        -500
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "createFromText",
+        "content": "={{ $json.normalized_transcript_json }}",
+        "name": "={{ $('Code - Check Transcription Storage Configuration').first().json.episode_id+'-normalized-transcript.json' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.drive_id }}"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.working_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000033",
+      "name": "Google Drive - Verify Normalized Transcript JSON",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3680,
+        -500
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Google Drive - Save Normalized Transcript JSON').first().json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000034",
+      "name": "Airtable - Mark Episode Transcribed",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3920,
+        -500
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $('Code - Check Transcription Storage Configuration').first().json.episode_id }}",
+            "status": "TRANSCRIBED",
+            "transcript_storage_url": "={{ $('Google Drive - Save Normalized Transcript JSON').first().json.webViewLink || '' }}",
+            "transcript_file_id": "={{ $('Google Drive - Save Normalized Transcript JSON').first().json.id || '' }}",
+            "last_completed_stage": "TRANSCRIBED",
+            "transcript_checksum": "={{ $('Crypto - Hash Normalized Transcript JSON').first().json.transcript_checksum }}"
+          },
+          "matchingColumns": [
+            "episode_id"
+          ],
+          "schema": [
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transcript_storage_url",
+              "displayName": "transcript_storage_url",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transcript_file_id",
+              "displayName": "transcript_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transcript_checksum",
+              "displayName": "transcript_checksum",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000035",
+      "name": "Code - Restore Transcription Result After Persistence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Check Transcription Storage Configuration').first().json;return [{json:{...source,transcript_persistence:response}}];"
+      }
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000002",
+      "name": "Code - Check Transcription Recovery Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"episodes\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"table:episodes\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      }
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000004",
+      "name": "IF - Is Transcription Recovery Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        500,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "91000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000005",
+      "name": "Airtable - Find Stale Transcription Jobs",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        740,
+        260
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Recovery Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Recovery Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "filterByFormula": "={{ $json.stale_transcription_filter_formula || \"FALSE()\" }}",
+        "returnAll": true,
+        "options": {}
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000008",
+      "name": "Code - Validate AssemblyAI Callback Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const body=raw.body||raw;const id=String(body.transcript_id||'');const status=String(body.status||'').toLowerCase();const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);return [{json:{...raw,transcript_id:id,callback_status:status,callback_signature_valid:false,callback_signature_fail_closed:true,callback_contract_valid:uuid&&['completed','error'].includes(status),callback_disabled_reason:'secure static-header comparison is not configured; use authenticated polling'}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000010",
+      "name": "IF - Is AssemblyAI Callback Signature Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        500,
+        40
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000009",
+              "leftValue": "={{ $json.callback_signature_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000011",
+      "name": "Code - Normalize And Validate AssemblyAI Transcript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        -700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r=$input.first().json;const source=$('Code - Restore AssemblyAI Status Read Context').item.json;const body=r.provider_response||r.response||r.data||r;const status=String(body.status||'').toLowerCase();const words=(Array.isArray(body.words)?body.words:[]).map((w,i)=>({index:i,text:String(w.text||'').trim(),speaker:String(w.speaker||'UNKNOWN'),start_ms:Number(w.start),end_ms:Number(w.end),confidence:Number(w.confidence)}));const utterances=(Array.isArray(body.utterances)?body.utterances:[]).map(u=>({text:String(u.text||''),start_ms:Number(u.start),end_ms:Number(u.end),confidence:Number(u.confidence),speaker:String(u.speaker||'UNKNOWN'),words:Array.isArray(u.words)?u.words:[]}));const errors=[];if(status!=='completed')errors.push('status_not_completed');if(!String(body.text||'').trim())errors.push('text_missing');if(!words.length)errors.push('words_missing');if(!utterances.length)errors.push('utterances_missing');for(let i=0;i<words.length;i++){const w=words[i];if(!w.text||!Number.isFinite(w.start_ms)||!Number.isFinite(w.end_ms)||w.end_ms<=w.start_ms)errors.push('invalid_word_'+i);if(i&&w.start_ms<words[i-1].start_ms)errors.push('unsorted_word_'+i);}const normalized_transcript={episode_id:source.episode_id,transcription_job_id:source.transcription_job_id||body.id||'',status,text:String(body.text||''),audio_duration:Number(body.audio_duration),speech_model_used:String(body.speech_model_used||''),speakers:[...new Set(words.map(w=>w.speaker))],words,utterances};return [{json:{...source,provider_response:body,normalized_transcript,transcript_contract_valid:errors.length===0,transcript_contract_errors:errors,last_completed_stage:errors.length?'TRANSCRIPTION_SUBMITTED':'TRANSCRIPTION_COMPLETED'}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000013",
+      "name": "IF - Is Normalized Transcript Contract Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3600,
+        -700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000012",
+              "leftValue": "={{ $json.transcript_contract_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000014",
+      "name": "Airtable - Find Transcription Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2900,
+        -760
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+($('Code - Check Transcription Storage Configuration').first().json.computed_stage_run_key||$('Code - Check Transcription Storage Configuration').first().json.stage_run_key)+\"'\" }}",
+        "returnAll": false,
+        "options": {},
+        "limit": 1
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000015",
+      "name": "Code - Resolve Transcription Processing Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3140,
+        -760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all();const source=$('Code - Check Transcription Storage Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};let stored={};try{stored=typeof f.result_json==='string'?JSON.parse(f.result_json):f.result_json||{};}catch{}return [{json:{...source,processing_event_found:Boolean(record),processing_event_complete:String(f.status||'').toUpperCase()==='COMPLETED',stored_stage_result:stored,stored_provider_job_id:f.provider_job_id||'',stored_drive_file_id:f.drive_file_id||''}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000017",
+      "name": "IF - Is Transcription Processing Event Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3380,
+        -760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000016",
+              "leftValue": "={{ $json.processing_event_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000018",
+      "name": "Airtable - Complete Transcription Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4400,
+        -700
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Transcription Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Transcription Storage Configuration').first().json.computed_stage_run_key||$('Code - Check Transcription Storage Configuration').first().json.stage_run_key }}",
+            "stage": "TRANSCRIPTION_COMPLETION",
+            "status": "COMPLETED",
+            "episode_id": "={{ $('Code - Check Transcription Storage Configuration').first().json.episode_id||'' }}",
+            "asset_id": "={{ $('Code - Check Transcription Storage Configuration').first().json.asset_id||'' }}",
+            "asset_version": "={{ $('Code - Check Transcription Storage Configuration').first().json.asset_version||'' }}",
+            "result_json": "={{ JSON.stringify($json) }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000019",
+      "name": "Code - Build Structured Transcription Completion Boundary Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input=$input.first().json;let seeded={};try{seeded=$('Code - Check Transcription Storage Configuration').first().json||seeded;}catch{}const x={...seeded,...input};const text=String(x.error?.message||x.error_message||x.message||'Boundary operation failed').replace(/(?:bearer|token|key|secret|authorization)[^\\s]*/ig,'[REDACTED]');return [{json:{workflow_name:\"Transcription Completion\",execution_id:$execution.id,stage:\"TRANSCRIPTION_COMPLETION\",episode_id:x.episode_id||'',asset_id:x.asset_id||'',asset_version:Number(x.asset_version||0),stage_run_key:x.computed_stage_run_key||x.stage_run_key||'',attempt_number:Number(x.attempt_number||1),error_code:String(x.error?.code||x.error_code||'BOUNDARY_FAILURE'),error_message:text.slice(0,500),retryable:Boolean(x.retryable),test_mode:x.test_mode!==false,allow_external_writes:false,allow_error_writes:x.allow_error_writes===true,last_completed_stage:String(x.last_completed_stage||seeded.last_completed_stage||'')}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000020",
+      "name": "Execute Sub-workflow - Dispatch Transcription Completion Failure To Error Handling",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5240,
+        -40
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YKuXZfayKjOvRHdR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "={{ $json.workflow_name }}",
+            "execution_id": "={{ $json.execution_id }}",
+            "stage": "={{ $json.stage }}",
+            "episode_id": "={{ $json.episode_id }}",
+            "asset_id": "={{ $json.asset_id }}",
+            "asset_version": "={{ $json.asset_version }}",
+            "stage_run_key": "={{ $json.stage_run_key }}",
+            "attempt_number": "={{ $json.attempt_number }}",
+            "error_code": "={{ $json.error_code }}",
+            "error_message": "={{ $json.error_message }}",
+            "retryable": "={{ $json.retryable }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "last_completed_stage": "={{ $json.last_completed_stage || \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000021",
+      "name": "Code - Return Transcription Completion Failure Dispatch Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5480,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,error_dispatched:true}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000001",
+      "name": "Code - Serialize Normalized Transcript Canonically",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        -700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;const t=x.normalized_transcript;const canonical={episode_id:t.episode_id,transcription_job_id:t.transcription_job_id,status:t.status,text:t.text,speakers:t.speakers,words:t.words};return [{json:{...x,normalized_transcript:canonical,normalized_transcript_json:JSON.stringify(canonical)}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000002",
+      "name": "Crypto - Hash Normalized Transcript JSON",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        -700
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "dataPropertyName": "transcript_checksum",
+        "encoding": "hex",
+        "value": "={{ $json.normalized_transcript_json }}"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000008",
+      "name": "Code - Resolve Stale Transcription Recovery Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const source=$('Code - Check Transcription Recovery Storage Configuration').first().json;const rows=$input.all().map(i=>i.json).filter(j=>j&&Object.keys(j).length&&(j.id||j.fields));if(!rows.length)return [{json:{...source,stale_jobs_found:false,recovery_mode:true}}];return rows.map(r=>({json:{...source,...(r.fields||r),airtable_record_id:r.id||'',stale_jobs_found:true,recovery_mode:true,assemblyai_read_attempt:0}}));"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000010",
+      "name": "IF - Were Stale Transcriptions Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1220,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000009",
+              "leftValue": "={{ $json.stale_jobs_found === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000011",
+      "name": "Loop Over Items - Check Each Stale Transcription",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1460,
+        260
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {
+          "reset": false
+        }
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000012",
+      "name": "Code - Prepare Bounded AssemblyAI Status Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;const attempt=Number(x.assemblyai_read_attempt||0)+1;const schedule=[5,15,45];return [{json:{...x,assemblyai_read_attempt:attempt,assemblyai_retry_delay_seconds:schedule[Math.min(attempt-1,schedule.length-1)],assemblyai_retry_budget_remaining:attempt<=schedule.length&&x.test_mode===false}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000013",
+      "name": "Code - Restore AssemblyAI Status Read Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3180,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const state=$('Code - Prepare Bounded AssemblyAI Status Read').item.json;const provider_state=String(response.status||'unknown').toLowerCase();return [{json:{...state,provider_response:response,...response,provider_state}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000014",
+      "name": "Code - Classify AssemblyAI Status Read Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3180,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const e=$input.first().json;const state=$('Code - Prepare Bounded AssemblyAI Status Read').item.json;const status=Number(e.statusCode||e.error?.statusCode||0);const retryable=status===429||status>=500||status===0;const attempt=Number(state.assemblyai_read_attempt||1);return [{json:{...state,error:e,retryable,assemblyai_retry_budget_remaining:retryable&&attempt<=3&&state.test_mode===false}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000016",
+      "name": "IF - Is AssemblyAI Status Read Retry Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3420,
+        -300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000015",
+              "leftValue": "={{ $json.assemblyai_retry_budget_remaining === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000017",
+      "name": "Wait - Apply AssemblyAI Status Read Backoff",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3660,
+        -300
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.assemblyai_retry_delay_seconds }}",
+        "unit": "seconds",
+        "options": {}
+      },
+      "webhookId": "7f66f06a-6f62-434a-8a7b-17121dad0c7c"
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000018",
+      "name": "Code - Schedule Next AssemblyAI Completion Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3660,
+        -100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;const attempt=Number(x.assemblyai_read_attempt||1);const retryable=attempt<=3&&x.test_mode===false;return [{json:{...x,retryable,assemblyai_retry_budget_remaining:retryable}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000020",
+      "name": "IF - Is Stale Recovery Iteration Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4880,
+        -500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "94000000-0000-4000-8000-000000000019",
+              "leftValue": "={{ $json.recovery_mode === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - Receive 2 Transcription Completion Request": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize AssemblyAI Callback Or Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate 2 Transcription Completion Contract": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 2 Transcription Completion Contract Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 2 Transcription Completion Contract Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 2 Transcription Completion Input Hash Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Contract Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 2 Transcription Completion Input Hash Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash 2 Transcription Completion Stage Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash 2 Transcription Completion Stage Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 2 Transcription Completion Stage Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 2 Transcription Completion Stage Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build 2 Transcription Completion Stage Run Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build 2 Transcription Completion Stage Run Key": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Supplied 2 Transcription Completion Stage Key Match?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Supplied 2 Transcription Completion Stage Key Match?": {
+      "main": [
+        [
+          {
+            "node": "Code - Check 2 Transcription Completion Stage Dedupe Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Stage Key Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check 2 Transcription Completion Stage Dedupe Fixture": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 2 Transcription Completion Stage Already Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 2 Transcription Completion Stage Already Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 2 Transcription Completion Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Check Transcription Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 2 Transcription Completion Spend Or Write Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Bounded AssemblyAI Status Read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Read Existing AssemblyAI Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore AssemblyAI Status Read Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Classify AssemblyAI Status Read Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route 2 Transcription Completion Provider State": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize And Validate AssemblyAI Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Schedule Next AssemblyAI Completion Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return 2 Transcription Completion Result": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Start Transcript Analysis Input Hash Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Start Transcript Analysis Input Hash Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash Start Transcript Analysis Stage Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash Start Transcript Analysis Stage Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Start Transcript Analysis Stage Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Start Transcript Analysis Stage Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Start Transcript Analysis Stage Run Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Start Transcript Analysis Stage Run Key": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Start Transcript Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Start Transcript Analysis": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Stale Recovery Iteration Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize AssemblyAI Callback Or Recovery": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate 2 Transcription Completion Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Receive AssemblyAI Completion": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate AssemblyAI Callback Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger - Recover Stalled Transcriptions": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Transcription Recovery Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Transcription Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Transcription Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Transcription Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Transcription Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Episode For Transcription Completion": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Transcription Context After Episode Load",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Transcription Context After Episode Load": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 2 Transcription Completion Spend Or Write Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save Normalized Transcript JSON": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Verify Normalized Transcript JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Verify Normalized Transcript JSON": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Mark Episode Transcribed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Mark Episode Transcribed": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Transcription Result After Persistence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Transcription Result After Persistence": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete Transcription Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Transcription Recovery Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Transcription Recovery Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Transcription Recovery Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Stale Transcription Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Stale Transcription Jobs": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Stale Transcription Recovery Batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate AssemblyAI Callback Signature": {
+      "main": [
+        [
+          {
+            "node": "IF - Is AssemblyAI Callback Signature Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is AssemblyAI Callback Signature Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize AssemblyAI Callback Or Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize And Validate AssemblyAI Transcript": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Normalized Transcript Contract Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Normalized Transcript Contract Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Serialize Normalized Transcript Canonically",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Transcription Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Transcription Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Transcription Processing Event": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Transcription Processing Event Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Transcription Processing Event Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 2 Transcription Completion Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Load Episode For Transcription Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete Transcription Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return 2 Transcription Completion Provider Failure": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Structured Transcription Completion Boundary Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Structured Transcription Completion Boundary Failure": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Dispatch Transcription Completion Failure To Error Handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Dispatch Transcription Completion Failure To Error Handling": {
+      "main": [
+        [
+          {
+            "node": "Code - Return Transcription Completion Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Return Transcription Completion Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Serialize Normalized Transcript Canonically": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash Normalized Transcript JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash Normalized Transcript JSON": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save Normalized Transcript JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Stale Transcription Recovery Batch": {
+      "main": [
+        [
+          {
+            "node": "IF - Were Stale Transcriptions Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Were Stale Transcriptions Found?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items - Check Each Stale Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items - Check Each Stale Transcription": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code - Normalize AssemblyAI Callback Or Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Prepare Bounded AssemblyAI Status Read": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Read Existing AssemblyAI Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore AssemblyAI Status Read Context": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route 2 Transcription Completion Provider State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Classify AssemblyAI Status Read Failure": {
+      "main": [
+        [
+          {
+            "node": "IF - Is AssemblyAI Status Read Retry Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is AssemblyAI Status Read Retry Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Wait - Apply AssemblyAI Status Read Backoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 2 Transcription Completion Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Apply AssemblyAI Status Read Backoff": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Bounded AssemblyAI Status Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Schedule Next AssemblyAI Completion Check": {
+      "main": [
+        [
+          {
+            "node": "IF - Is AssemblyAI Status Read Retry Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Stale Recovery Iteration Complete?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items - Check Each Stale Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "errorWorkflow": "YKuXZfayKjOvRHdR"
+  },
+  "active": false
+}

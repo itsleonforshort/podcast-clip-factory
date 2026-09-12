@@ -1,0 +1,2290 @@
+{
+  "name": "Podcast Video Automation v1 - 4 Asset Generation",
+  "nodes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Execute Workflow Trigger - Receive 4 Asset Generation Request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "episode_id",
+              "type": "string"
+            },
+            {
+              "name": "moment_id",
+              "type": "string"
+            },
+            {
+              "name": "asset_version",
+              "type": "number"
+            },
+            {
+              "name": "change_scope",
+              "type": "string"
+            },
+            {
+              "name": "stage_run_key",
+              "type": "string"
+            },
+            {
+              "name": "test_mode",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_external_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_openai",
+              "type": "boolean"
+            },
+            {
+              "name": "allow_error_writes",
+              "type": "boolean"
+            },
+            {
+              "name": "context_risk_review_threshold",
+              "type": "number"
+            },
+            {
+              "name": "selection_reason",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "Code - Validate 4 Asset Generation Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const x=raw.body||raw;const required=['episode_id','moment_id','asset_version','change_scope','stage_run_key'];const missing=required.filter(k=>x[k]===undefined||x[k]===null||x[k]==='');const rawThreshold=x.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...x,test_mode:x.test_mode!==false,allow_external_writes:x.allow_external_writes===true,allow_openai:x.allow_openai===true,allow_error_writes:x.allow_error_writes===true,context_risk_review_threshold:Number.isFinite(threshold)?threshold:null,atomic_claim_verified:false,atomic_claim_block_reason:'TST-AIRTABLE-01 requires uniquely enforced conditional ownership',contract_valid:missing.length===0,missing_fields:missing,provider_state:x.generation_status||x.status||'configuration_hold',stage_episode_id:x.episode_id,stage_name:'asset_generation',stage_asset_id:x.asset_id||'none',stage_asset_version:Number(x.asset_version||1)}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "name": "IF - Is 4 Asset Generation Contract Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        540,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.contract_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "name": "Edit Fields - Return 4 Asset Generation Contract Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        160
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'CONTRACT_FAILED'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "name": "Code - Build 4 Asset Generation Input Hash Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const fields=[\"episode_id\",\"moment_id\",\"asset_version\",\"change_scope\"]; const payload=Object.fromEntries(fields.map(k=>[k,x[k]])); const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v; return [{json:{...x,input_hash_source:JSON.stringify(stable(payload))}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "name": "Crypto - Hash 4 Asset Generation Stage Input",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -80
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.input_hash_source }}",
+        "dataPropertyName": "computed_input_hash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000008",
+      "name": "Code - Build 4 Asset Generation Stage Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; return [{json:{...x,stage_key_source:[x.stage_episode_id,x.stage_name,x.stage_asset_id,x.stage_asset_version,x.computed_input_hash].join('|')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000009",
+      "name": "Crypto - Build 4 Asset Generation Stage Run Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -80
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.stage_key_source }}",
+        "dataPropertyName": "computed_stage_run_key",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "name": "IF - Does Supplied 4 Asset Generation Stage Key Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000010",
+              "leftValue": "={{ $json.stage_run_key === $json.computed_stage_run_key }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "name": "Edit Fields - Return 4 Asset Generation Stage Key Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2000,
+        100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'STAGE_KEY_MISMATCH'}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "Code - Check 4 Asset Generation Stage Dedupe Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const keys=Array.isArray(x.existing_stage_run_keys)?x.existing_stage_run_keys:[]; return [{json:{...x,stage_already_complete:keys.includes(x.computed_stage_run_key),dedupe_checked:true}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "IF - Is 4 Asset Generation Stage Already Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000014",
+              "leftValue": "={{ $json.stage_already_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000016",
+      "name": "Edit Fields - Return Existing 4 Asset Generation Stage Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2480,
+        -20
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'IDEMPOTENT_REPLAY',paid_calls_executed:0,external_writes_executed:0}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000018",
+      "name": "IF - Is 4 Asset Generation Spend Or Write Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2480,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000017",
+              "leftValue": "={{ $json.allow_openai === true && $json.allow_external_writes === true && $json.test_mode === false && $json.atomic_claim_verified === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000019",
+      "name": "Edit Fields - Return 4 Asset Generation Configuration Hold",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2720,
+        -60
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'CONFIGURATION_HOLD',paid_calls_executed:0,external_writes_executed:0,next_stage:null}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000020",
+      "name": "HTTP Request - Generate Structured Written Assets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2720,
+        -300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.openai_request) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        },
+        "nodeCredentialType": "openAiApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000023",
+      "name": "Switch - Route 4 Asset Generation Provider State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        -300
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000021",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "completed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000022",
+                    "leftValue": "={{ $json.provider_state || $json.status || 'configuration_hold' }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "failed"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000024",
+      "name": "Edit Fields - Return 4 Asset Generation Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3440,
+        -300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'SKELETON_READY',provider_execution_blocked:true}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000025",
+      "name": "Edit Fields - Return 4 Asset Generation Provider Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3200,
+        -80
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'PROVIDER_FAILED',retryable:false}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000026",
+      "name": "Code - Build Start Video Rendering And QA Input Hash Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; const payload={episode_id:x.episode_id,asset_id:x.asset_id,asset_version:x.asset_version,render_purpose:'review',payload_hash:x.payload_hash||x.computed_stage_run_key}; const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v; return [{json:{...x,next_stage_input_hash_source:JSON.stringify(stable(payload))}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000027",
+      "name": "Crypto - Hash Start Video Rendering And QA Stage Input",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        -300
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.next_stage_input_hash_source }}",
+        "dataPropertyName": "computed_next_stage_input_hash",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000028",
+      "name": "Code - Build Start Video Rendering And QA Stage Key Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json; return [{json:{...x,next_stage_key_source:[x.episode_id,'video_rendering_qa',x.asset_id||'none',Number(x.asset_version||1),x.computed_next_stage_input_hash].join('|')}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000029",
+      "name": "Crypto - Build Start Video Rendering And QA Stage Run Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -300
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.next_stage_key_source }}",
+        "dataPropertyName": "computed_next_stage_run_key",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000030",
+      "name": "Execute Sub-workflow - Start Video Rendering And QA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4640,
+        -300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "VWQzjzXanLuUYgDw",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $json.episode_id }}",
+            "asset_id": "={{ $json.asset_id }}",
+            "asset_version": "={{ $json.asset_version }}",
+            "render_purpose": "review",
+            "payload_hash": "={{ $json.payload_hash || $json.computed_stage_run_key }}",
+            "stage_run_key": "={{ $json.computed_next_stage_run_key }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_render": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "context_risk_review_threshold": "={{ $json.context_risk_review_threshold }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000046",
+      "name": "Code - Check Asset Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"episodes\",\"moments\",\"profiles\",\"assets\",\"events\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"drive_id\",\"working_folder_id\",\"table:episodes\",\"table:moments\",\"table:profiles\",\"table:assets\",\"table:events\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\",\"drive\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000048",
+      "name": "IF - Is Asset Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2660,
+        -440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000047",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000049",
+      "name": "Airtable - Load Episode For Asset Generation",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2900,
+        -440
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "filterByFormula": "={{ \"{episode_id}='\"+$('Code - Check Asset Storage Configuration').first().json.episode_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000050",
+      "name": "Airtable - Load Moment For Asset Generation",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3140,
+        -440
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.moments }}"
+        },
+        "filterByFormula": "={{ \"{moment_id}='\"+$('Code - Check Asset Storage Configuration').first().json.moment_id+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000051",
+      "name": "Airtable - Load Brand Profile For Asset Generation",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3380,
+        -440
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.profiles }}"
+        },
+        "filterByFormula": "={{ \"{brand_profile_id}='\"+($json.brand_profile_id||'')+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000052",
+      "name": "Airtable - Find Existing Asset Version",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3620,
+        -440
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "filterByFormula": "={{ \"AND({moment_id}='\"+$('Code - Check Asset Storage Configuration').first().json.moment_id+\"',{asset_version}=\"+$('Code - Check Asset Storage Configuration').first().json.asset_version+\")\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000053",
+      "name": "Code - Restore Asset Context After Storage Loads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3860,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Assemble Asset Source Context').first().json;return [{json:{...source,existing_asset_record:response}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000054",
+      "name": "Google Drive - Save Caption Manifest And Render Contract",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3440,
+        -520
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "createFromText",
+        "content": "={{ $json.render_contract_json }}",
+        "name": "={{ ($json.asset_id||$('Code - Check Asset Storage Configuration').first().json.moment_id)+'-v'+$('Code - Check Asset Storage Configuration').first().json.asset_version+'-render-contract.json' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.drive_id }}"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.working_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000055",
+      "name": "Google Drive - Verify Caption Manifest And Render Contract",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3680,
+        -520
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Google Drive - Save Caption Manifest And Render Contract').first().json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000056",
+      "name": "Airtable - Upsert Draft Asset Version",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3920,
+        -520
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.assets }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asset_version_key": "={{ ($json.asset_id||$('Code - Check Asset Storage Configuration').first().json.moment_id)+'|'+$('Code - Check Asset Storage Configuration').first().json.asset_version }}",
+            "asset_id": "={{ $json.asset_id || \"\" }}",
+            "moment_id": "={{ $('Code - Check Asset Storage Configuration').first().json.moment_id }}",
+            "asset_version": "={{ $('Code - Check Asset Storage Configuration').first().json.asset_version }}",
+            "caption_payload_url": "={{ $('Google Drive - Save Caption Manifest And Render Contract').first().json.webViewLink || '' }}",
+            "render_contract_file_id": "={{ $('Google Drive - Save Caption Manifest And Render Contract').first().json.id || '' }}",
+            "status": "DRAFT",
+            "payload_hash": "={{ $('Crypto - Hash Provider-Neutral Render Contract').first().json.payload_hash }}",
+            "contract_checksum": "={{ $('Crypto - Hash Provider-Neutral Render Contract').first().json.payload_hash }}"
+          },
+          "matchingColumns": [
+            "asset_version_key"
+          ],
+          "schema": [
+            {
+              "id": "asset_version_key",
+              "displayName": "asset_version_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "moment_id",
+              "displayName": "moment_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caption_payload_url",
+              "displayName": "caption_payload_url",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "render_contract_file_id",
+              "displayName": "render_contract_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payload_hash",
+              "displayName": "payload_hash",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contract_checksum",
+              "displayName": "contract_checksum",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000057",
+      "name": "Code - Restore Asset Result After Persistence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Check Asset Storage Configuration').first().json;return [{json:{...source,asset_persistence:response}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000041",
+      "name": "Code - Resolve Existing Asset Version",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3860,
+        -220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all();const source=$('Code - Check Asset Storage Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};return [{json:{...source,asset_version_found:Boolean(record),stored_stage_result:f,asset_id:f.asset_id||source.asset_id}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000043",
+      "name": "IF - Does Asset Version Already Exist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4100,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000042",
+              "leftValue": "={{ $json.asset_version_found === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000044",
+      "name": "Code - Parse Validate And Build Asset Render Contract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        -1260
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const isObject=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);const validate=(value,schema,path='$')=>{const errors=[];const types=Array.isArray(schema.type)?schema.type:[schema.type];const match=type=>type==='null'?value===null:type==='object'?isObject(value):type==='array'?Array.isArray(value):type==='integer'?typeof value==='number'&&Number.isFinite(value)&&Number.isInteger(value):type==='number'?typeof value==='number'&&Number.isFinite(value):type==='string'?typeof value==='string':type==='boolean'?typeof value==='boolean':true;if(schema.type&&!types.some(match)){errors.push(path+':wrong_type');return errors;}if(schema.enum&&!schema.enum.some(expected=>Object.is(expected,value)))errors.push(path+':enum');if(isObject(value)){const properties=schema.properties||{};for(const key of schema.required||[])if(!Object.prototype.hasOwnProperty.call(value,key))errors.push(path+'.'+key+':missing');if(schema.additionalProperties===false)for(const key of Object.keys(value))if(!Object.prototype.hasOwnProperty.call(properties,key))errors.push(path+'.'+key+':extra');for(const [key,child] of Object.entries(properties))if(Object.prototype.hasOwnProperty.call(value,key))errors.push(...validate(value[key],child,path+'.'+key));}if(Array.isArray(value)){if(Number.isInteger(schema.minItems)&&value.length<schema.minItems)errors.push(path+':minItems');if(Number.isInteger(schema.maxItems)&&value.length>schema.maxItems)errors.push(path+':maxItems');if(schema.items)value.forEach((entry,index)=>errors.push(...validate(entry,schema.items,path+'['+index+']')));}if(typeof value==='string'){if(Number.isInteger(schema.minLength)&&value.length<schema.minLength)errors.push(path+':minLength');if(Number.isInteger(schema.maxLength)&&value.length>schema.maxLength)errors.push(path+':maxLength');}if(typeof value==='number'&&Number.isFinite(value)){if(typeof schema.minimum==='number'&&value<schema.minimum)errors.push(path+':minimum');if(typeof schema.maximum==='number'&&value>schema.maximum)errors.push(path+':maximum');}return errors;};const r=$input.first().json;const source=$('Code - Build Strict OpenAI Written Asset Request').item.json;const status=String(r.status||'');const message=(r.output||[]).find(o=>o.type==='message'&&o.status==='completed');const refusal=(message?.content||[]).find(c=>c.type==='refusal');const part=(message?.content||[]).find(c=>c.type==='output_text');let p=null;let parseError='';try{if(part?.text)p=JSON.parse(part.text);}catch(e){parseError=String(e.message||e);}const schema=source.openai_request?.text?.format?.schema||{};const schemaErrors=parseError||!p?['$:invalid_json']:validate(p,schema);p=p||{};const errors=[];if(status!=='completed')errors.push('response_not_completed');if(!message)errors.push('completed_message_missing');if(refusal)errors.push('model_refusal');if(!part?.text)errors.push('output_text_missing');if(parseError)errors.push('malformed_json');if(schemaErrors.length)errors.push('schema_mismatch');if(!Array.isArray(p.alternative_hooks)||p.alternative_hooks.length>2)errors.push('alternative_hooks_invalid');const claims=Array.isArray(p.claims)?p.claims:[];const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\\s+/g,' ');const evidenceText=norm((source.source_words||[]).map(w=>w.text).join(' '));for(const c of claims){if(!String(c.source_quote||'').trim()||!Number.isFinite(Number(c.source_start_ms))||!Number.isFinite(Number(c.source_end_ms))||Number(c.source_end_ms)<=Number(c.source_start_ms)||!evidenceText.includes(norm(c.source_quote)))errors.push('claim_evidence_invalid');}const words=Array.isArray(source.source_words)?source.source_words:[];if(!words.length)errors.push('source_words_missing');const clipStart=Number(source.source_start_ms||0),clipEnd=Number(source.source_end_ms||0),duration=clipEnd-clipStart;const rel=words.map((w,i)=>({index:i,text:String(w.text||'').trim(),speaker:String(w.speaker||source.speaker||'UNKNOWN'),source_start_ms:Number(w.start_ms??w.start),source_end_ms:Number(w.end_ms??w.end),start_ms:Number(w.start_ms??w.start)-clipStart,end_ms:Number(w.end_ms??w.end)-clipStart}));if(rel.some(w=>!w.text||!Number.isFinite(w.start_ms)||!Number.isFinite(w.end_ms)||w.end_ms<=w.start_ms||w.start_ms<0||w.end_ms>duration))errors.push('caption_word_invalid');const determiners=new Set(['a','an','the','this','that','these','those','my','your','our','their']);const groups=[];let current=[];const close=()=>{if(!current.length)return;groups.push({group_index:groups.length,words:current,lines:[current.slice(0,4).map(w=>w.text).join(' '),current.slice(4,8).map(w=>w.text).join(' ')].filter(Boolean),start_ms:current[0].start_ms,end_ms:current[current.length-1].end_ms,max_words_per_line:4,max_words_per_group:8});current=[];};for(let i=0;i<rel.length;i++){const word=rel[i],prev=rel[i-1],pause=prev?word.source_start_ms-prev.source_end_ms:0,prevText=String(prev?.text||''),prevDeterminer=determiners.has(prevText.toLowerCase().replace(/[^a-z]/g,''));if(current.length&&(pause>=350||/[.!?]$/.test(prevText))&&!prevDeterminer)close();current.push(word);if(current.length>=8){const tail=current[current.length-1];if(determiners.has(String(tail.text).toLowerCase().replace(/[^a-z]/g,''))){current.pop();close();current=[tail];}else close();}else if(/[.!?]$/.test(word.text))close();}close();const providerOk=status==='completed'&&Boolean(message)&&!refusal&&Boolean(part?.text)&&!parseError&&schemaErrors.length===0;const sourceUrl=String(source.source_public_url||source.episode_record?.source_public_url||source.episode_record?.accessible_source_url||'');const render_contract={contract_version:'podcast-render-contract-v1',episode_id:source.episode_id,moment_id:source.moment_id,asset_id:source.asset_id||source.moment_id,asset_version:Number(source.asset_version||1),source_media_url:sourceUrl,source_start_ms:clipStart,source_end_ms:clipEnd,duration_min_seconds:Math.max(0,duration/1000-0.1),duration_max_seconds:duration/1000+0.1,source_excerpt:source.source_excerpt,speaker:source.speaker,angle:source.angle,scores:source.scores,context_risk:source.context_risk,warnings:source.warnings,copy:{primary_hook:p.primary_hook,alternative_hooks:p.alternative_hooks,title:p.title,instagram_caption:p.instagram_caption,linkedin_post:p.linkedin_post,x_post:p.x_post,angle_description:p.angle_description,cta:p.cta},claims,caption_groups:groups,caption_assertions:{max_words_per_line:4,max_lines_per_group:2,max_words_per_group:8,clip_relative_timings:true,highlighted_words_expected:1,previous_word_reset_expected:true,safe_area_required:true,timing_tolerance_ms:100},caption_style:source.brand_profile?.caption_style||source.caption_style||{fontFamily:'Arial',activeColor:'#FFD400'},output_profile:{width:1080,height:1920,format:'mp4',videoCodec:'h264',audioCodec:'aac',...(source.output_profile||{})},brand_profile_id:source.brand_profile_id||'',renderer_contract_verified:false,shotstack_caption_spike_passed:false};if(clipEnd<=clipStart)errors.push('source_range_invalid');if(!/^https:\\/\\//i.test(sourceUrl))errors.push('public_source_url_missing');return [{json:{...source,provider_state:providerOk?'completed':'failed',openai_response_id:String(r.id||''),openai_model:String(r.model||''),openai_usage:{input_tokens:Number(r.usage?.input_tokens||0),output_tokens:Number(r.usage?.output_tokens||0),total_tokens:Number(r.usage?.total_tokens||0)},openai_incomplete_reason:r.incomplete_details?.reason||'',openai_error:r.error||null,written_assets:p,render_contract,asset_contract_valid:providerOk&&errors.length===0,asset_contract_errors:[...new Set(errors)],written_asset_schema_errors:schemaErrors,last_completed_stage:providerOk&&errors.length===0?'ASSET_CONTRACT_BUILT':'MOMENT_SELECTED'}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000046",
+      "name": "IF - Is Asset Render Contract Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3680,
+        -1260
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000045",
+              "leftValue": "={{ $json.asset_contract_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000047",
+      "name": "Crypto - Hash Provider-Neutral Render Contract",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        -1260
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "dataPropertyName": "payload_hash",
+        "encoding": "hex",
+        "value": "={{ $json.render_contract_json }}"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000048",
+      "name": "Airtable - Find Asset Generation Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2900,
+        -1440
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "filterByFormula": "={{ \"{event_id}='\"+($('Code - Check Asset Storage Configuration').first().json.computed_stage_run_key||$('Code - Check Asset Storage Configuration').first().json.stage_run_key)+\"'\" }}",
+        "returnAll": false,
+        "options": {},
+        "limit": 1
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000049",
+      "name": "Code - Resolve Asset Generation Processing Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3140,
+        -1440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all();const source=$('Code - Check Asset Storage Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};let stored={};try{stored=typeof f.result_json==='string'?JSON.parse(f.result_json):f.result_json||{};}catch{}return [{json:{...source,processing_event_found:Boolean(record),processing_event_complete:String(f.status||'').toUpperCase()==='COMPLETED',stored_stage_result:stored,stored_provider_job_id:f.provider_job_id||'',stored_drive_file_id:f.drive_file_id||''}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000051",
+      "name": "IF - Is Asset Generation Processing Event Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3380,
+        -1440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000050",
+              "leftValue": "={{ $json.processing_event_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000052",
+      "name": "Airtable - Complete Asset Generation Processing Event",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        4400,
+        -1260
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Asset Storage Configuration').first().json.storage_config.tables.events }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_id": "={{ $('Code - Check Asset Storage Configuration').first().json.computed_stage_run_key||$('Code - Check Asset Storage Configuration').first().json.stage_run_key }}",
+            "stage": "ASSET_GENERATION",
+            "status": "COMPLETED",
+            "episode_id": "={{ $('Code - Check Asset Storage Configuration').first().json.episode_id||'' }}",
+            "asset_id": "={{ $('Code - Check Asset Storage Configuration').first().json.asset_id||'' }}",
+            "asset_version": "={{ $('Code - Check Asset Storage Configuration').first().json.asset_version||'' }}",
+            "result_json": "={{ JSON.stringify($json) }}"
+          },
+          "matchingColumns": [
+            "event_id"
+          ],
+          "schema": [
+            {
+              "id": "event_id",
+              "displayName": "event_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_id",
+              "displayName": "asset_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset_version",
+              "displayName": "asset_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "result_json",
+              "displayName": "result_json",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000053",
+      "name": "Code - Build Structured Asset Generation Boundary Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input=$input.first().json;let seeded={};try{seeded=$('Code - Check Asset Storage Configuration').first().json||seeded;}catch{}const x={...seeded,...input};const text=String(x.error?.message||x.error_message||x.message||'Boundary operation failed').replace(/(?:bearer|token|key|secret|authorization)[^\\s]*/ig,'[REDACTED]');return [{json:{workflow_name:\"Asset Generation\",execution_id:$execution.id,stage:\"ASSET_GENERATION\",episode_id:x.episode_id||'',asset_id:x.asset_id||'',asset_version:Number(x.asset_version||0),stage_run_key:x.computed_stage_run_key||x.stage_run_key||'',attempt_number:Number(x.attempt_number||1),error_code:String(x.error?.code||x.error_code||'BOUNDARY_FAILURE'),error_message:text.slice(0,500),retryable:Boolean(x.retryable),test_mode:x.test_mode!==false,allow_external_writes:false,allow_error_writes:x.allow_error_writes===true,last_completed_stage:String(x.last_completed_stage||seeded.last_completed_stage||'')}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000054",
+      "name": "Execute Sub-workflow - Dispatch Asset Generation Failure To Error Handling",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5240,
+        80
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YKuXZfayKjOvRHdR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "={{ $json.workflow_name }}",
+            "execution_id": "={{ $json.execution_id }}",
+            "stage": "={{ $json.stage }}",
+            "episode_id": "={{ $json.episode_id }}",
+            "asset_id": "={{ $json.asset_id }}",
+            "asset_version": "={{ $json.asset_version }}",
+            "stage_run_key": "={{ $json.stage_run_key }}",
+            "attempt_number": "={{ $json.attempt_number }}",
+            "error_code": "={{ $json.error_code }}",
+            "error_message": "={{ $json.error_message }}",
+            "retryable": "={{ $json.retryable }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "last_completed_stage": "={{ $json.last_completed_stage || \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000055",
+      "name": "Code - Return Asset Generation Failure Dispatch Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5480,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,error_dispatched:true}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000008",
+      "name": "Code - Assemble Asset Source Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3620,
+        -700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const source=$('Code - Check Asset Storage Configuration').first().json;const value=name=>{const json=$(name).first().json;return json.fields||json||{}};const episode=value('Airtable - Load Episode For Asset Generation'),moment=value('Airtable - Load Moment For Asset Generation'),brand=value('Airtable - Load Brand Profile For Asset Generation');const parse=(value,fallback)=>{if(Array.isArray(value)||value&&typeof value==='object')return value;try{return typeof value==='string'?JSON.parse(value):fallback;}catch{return fallback;}};const words=parse(moment.words_json||moment.words||source.source_words,[]);const riskRaw=moment.context_risk??source.context_risk;const riskPresent=riskRaw!==undefined&&riskRaw!==null&&String(riskRaw).trim()!=='';const riskNumber=riskPresent?Number(riskRaw):NaN;const riskValue=Number.isFinite(riskNumber)?riskNumber:null;const thresholdRaw=moment.context_risk_review_threshold??source.context_risk_review_threshold;const thresholdPresent=thresholdRaw!==undefined&&thresholdRaw!==null&&String(thresholdRaw).trim()!=='';const threshold=thresholdPresent?Number(thresholdRaw):NaN;const configuredThreshold=Number.isFinite(threshold)?threshold:null;const riskLabel=String(moment.context_risk_label||source.context_risk_label||(riskValue===null?riskRaw:(configuredThreshold!==null&&riskValue>=configuredThreshold?'HIGH':'LOW'))||'').trim().toUpperCase();const requiresReview=!riskPresent||moment.requires_context_review===true||String(moment.requires_context_review||'').toLowerCase()==='true'||riskLabel==='HIGH'||configuredThreshold===null||(riskValue!==null&&riskValue>=configuredThreshold);const complete=Boolean((episode.id||episode.episode_id)&&(moment.id||moment.moment_id)&&(brand.id||brand.brand_profile_id)&&words.length);return [{json:{...source,episode_record:episode,moment_record:moment,brand_profile:brand,source_words:words,source_start_ms:Number(moment.source_start_ms||source.source_start_ms||0),source_end_ms:Number(moment.source_end_ms||source.source_end_ms||0),source_excerpt:moment.source_excerpt||source.source_excerpt||'',speaker:moment.speaker||source.speaker||'',angle:moment.angle||source.angle||'',selection_reason:String(moment.selection_reason||source.selection_reason||''),scores:parse(moment.scores_json||moment.scores||source.scores,{}),context_risk:riskValue===null?riskLabel:riskValue,context_risk_value:riskValue,context_risk_label:riskLabel,context_risk_review_threshold:configuredThreshold,requires_context_review:requiresReview,warnings:parse(moment.warnings_json||moment.warnings||source.warnings,[]),asset_source_context_complete:complete}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000010",
+      "name": "IF - Is Asset Source Context Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3860,
+        -700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000009",
+              "leftValue": "={{ $json.asset_source_context_complete === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000011",
+      "name": "Code - Serialize Validated Render Contract Canonically",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        -1380
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;const c=x.render_contract;const canonical={version:c.version,episode_id:c.episode_id,moment_id:c.moment_id,asset_id:c.asset_id,asset_version:c.asset_version,source_start_ms:c.source_start_ms,source_end_ms:c.source_end_ms,copy:c.copy,claims:c.claims,caption_groups:c.caption_groups,output_profile:c.output_profile,brand_profile_id:c.brand_profile_id};return [{json:{...x,render_contract:canonical,render_contract_json:JSON.stringify(canonical)}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000027",
+      "name": "Code - Build Strict OpenAI Written Asset Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2500,
+        -540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;const evidence={episode:x.episode_record,moment:{moment_id:x.moment_id,source_start_ms:x.source_start_ms,source_end_ms:x.source_end_ms,source_excerpt:x.source_excerpt,speaker:x.speaker,angle:x.angle,scores:x.scores,context_risk:x.context_risk,warnings:x.warnings,words:x.source_words},brand_profile:x.brand_profile,channels:{linkedin:x.linkedin_enabled===true,x:x.x_enabled===true}};const request={model:'gpt-5-mini',input:[{role:'developer',content:[{type:'input_text',text:'Use only supplied source evidence. Keep direct quotes distinguishable from paraphrases. Reject unsupported facts, figures, and guarantees. Return only the strict schema.'}]},{role:'user',content:[{type:'input_text',text:JSON.stringify(evidence)}]}],text:{format:{type:'json_schema',name:'podcast_written_assets_v1',strict:true,schema:{\"type\":\"object\",\"properties\":{\"primary_hook\":{\"type\":\"string\"},\"alternative_hooks\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"maxItems\":2},\"title\":{\"type\":\"string\"},\"instagram_caption\":{\"type\":\"string\"},\"linkedin_post\":{\"type\":[\"string\",\"null\"]},\"x_post\":{\"type\":[\"string\",\"null\"]},\"angle_description\":{\"type\":\"string\"},\"cta\":{\"type\":\"string\"},\"claims\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"text\":{\"type\":\"string\"},\"source_quote\":{\"type\":\"string\"},\"source_start_ms\":{\"type\":\"integer\"},\"source_end_ms\":{\"type\":\"integer\"},\"kind\":{\"type\":\"string\",\"enum\":[\"direct_quote\",\"paraphrase\"]}},\"required\":[\"text\",\"source_quote\",\"source_start_ms\",\"source_end_ms\",\"kind\"],\"additionalProperties\":false}}},\"required\":[\"primary_hook\",\"alternative_hooks\",\"title\",\"instagram_caption\",\"linkedin_post\",\"x_post\",\"angle_description\",\"cta\",\"claims\"],\"additionalProperties\":false}}},max_output_tokens:4096,store:false};return [{json:{...x,openai_request:request,openai_schema_name:'podcast_written_assets_v1'}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - Receive 4 Asset Generation Request": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate 4 Asset Generation Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate 4 Asset Generation Contract": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 4 Asset Generation Contract Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 4 Asset Generation Contract Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 4 Asset Generation Input Hash Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Contract Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 4 Asset Generation Input Hash Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash 4 Asset Generation Stage Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash 4 Asset Generation Stage Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Build 4 Asset Generation Stage Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build 4 Asset Generation Stage Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build 4 Asset Generation Stage Run Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build 4 Asset Generation Stage Run Key": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Supplied 4 Asset Generation Stage Key Match?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Supplied 4 Asset Generation Stage Key Match?": {
+      "main": [
+        [
+          {
+            "node": "Code - Check 4 Asset Generation Stage Dedupe Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Stage Key Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check 4 Asset Generation Stage Dedupe Fixture": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 4 Asset Generation Stage Already Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 4 Asset Generation Stage Already Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 4 Asset Generation Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Check Asset Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is 4 Asset Generation Spend Or Write Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Strict OpenAI Written Asset Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Generate Structured Written Assets": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route 4 Asset Generation Provider State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route 4 Asset Generation Provider State": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Validate And Build Asset Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return 4 Asset Generation Result": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Start Video Rendering And QA Input Hash Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Start Video Rendering And QA Input Hash Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash Start Video Rendering And QA Stage Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash Start Video Rendering And QA Stage Input": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Start Video Rendering And QA Stage Key Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Start Video Rendering And QA Stage Key Source": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Start Video Rendering And QA Stage Run Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Start Video Rendering And QA Stage Run Key": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Start Video Rendering And QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Start Video Rendering And QA": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Asset Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Asset Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Asset Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Asset Generation Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Configuration Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Episode For Asset Generation": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Load Moment For Asset Generation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Moment For Asset Generation": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Load Brand Profile For Asset Generation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Brand Profile For Asset Generation": {
+      "main": [
+        [
+          {
+            "node": "Code - Assemble Asset Source Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Existing Asset Version": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Existing Asset Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Asset Context After Storage Loads": {
+      "main": [
+        [
+          {
+            "node": "IF - Is 4 Asset Generation Spend Or Write Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save Caption Manifest And Render Contract": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Verify Caption Manifest And Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Verify Caption Manifest And Render Contract": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Upsert Draft Asset Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert Draft Asset Version": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Asset Result After Persistence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Asset Result After Persistence": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Complete Asset Generation Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Existing Asset Version": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Asset Version Already Exist?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Asset Version Already Exist?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 4 Asset Generation Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Restore Asset Context After Storage Loads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Validate And Build Asset Render Contract": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Asset Render Contract Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Asset Render Contract Valid?": {
+      "main": [
+        [
+          {
+            "node": "Code - Serialize Validated Render Contract Canonically",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Hash Provider-Neutral Render Contract": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save Caption Manifest And Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Asset Generation Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Asset Generation Processing Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Asset Generation Processing Event": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Asset Generation Processing Event Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Asset Generation Processing Event Complete?": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Existing 4 Asset Generation Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Load Episode For Asset Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Complete Asset Generation Processing Event": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return 4 Asset Generation Provider Failure": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Structured Asset Generation Boundary Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Structured Asset Generation Boundary Failure": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Dispatch Asset Generation Failure To Error Handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Dispatch Asset Generation Failure To Error Handling": {
+      "main": [
+        [
+          {
+            "node": "Code - Return Asset Generation Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Return Asset Generation Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Assemble Asset Source Context": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Asset Source Context Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Asset Source Context Complete?": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Existing Asset Version",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return 4 Asset Generation Provider Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Serialize Validated Render Contract Canonically": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Hash Provider-Neutral Render Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Strict OpenAI Written Asset Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Generate Structured Written Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "errorWorkflow": "YKuXZfayKjOvRHdR"
+  },
+  "active": false
+}

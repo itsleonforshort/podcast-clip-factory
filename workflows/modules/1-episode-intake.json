@@ -1,0 +1,1719 @@
+{
+  "name": "Podcast Video Automation v1 - 1 Episode Intake",
+  "nodes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Webhook - Receive Podcast Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -100
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "podcast-video-automation-v1-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "377ecd17-1c3c-4d6d-abdb-82142a93a956"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "Code - Normalize Validate And Dedupe Intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        -100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw=$input.first().json;const body=raw.body||raw;const missing=['source_file_id','source_version','source_checksum','brand_profile_id'].filter(k=>!body[k]);const canonical=['episode',body.source_file_id,body.source_version,body.source_checksum].join('|');return [{json:{...body,test_mode:true,allow_external_writes:false,allow_transcription:false,atomic_claim_verified:false,atomic_claim_block_reason:'TST-AIRTABLE-01 requires a uniquely enforced conditional owner before AssemblyAI upload or submit',intake_valid:missing.length===0,missing_fields:missing,episode_key_source:canonical,episode_state:'RECEIVED',intake_source:body.intake_source||'webhook',last_completed_stage:'INTAKE_VALIDATED'}}];"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "name": "IF - Is Podcast Intake Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        540,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.intake_valid === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "name": "Respond to Webhook - Reject Invalid Intake",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        80
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {ok:false,error:'INVALID_INTAKE',missing_fields:$json.missing_fields} }}",
+        "options": {
+          "responseCode": 400
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "name": "Respond to Webhook - Accept Valid Intake",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        -180
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {ok:true,status:'RECEIVED_CONFIGURATION_HOLD'} }}",
+        "options": {
+          "responseCode": 202
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "name": "Crypto - Build Episode Dedupe Key",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -180
+      ],
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "value": "={{ $json.episode_key_source }}",
+        "dataPropertyName": "episode_dedupe_key",
+        "encoding": "hex"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "name": "Switch - Route Existing Episode State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        -180
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000008",
+                    "leftValue": "={{ $json.episode_state }}",
+                    "rightValue": "COMPLETE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "COMPLETE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000009",
+                    "leftValue": "={{ $json.episode_state }}",
+                    "rightValue": "TRANSCRIBING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TRANSCRIBING"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000010",
+                    "leftValue": "={{ $json.episode_state }}",
+                    "rightValue": "RECEIVED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RECEIVED"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "IF - Is Transcription Spend Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1540,
+        -180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "00000000-0000-4000-8000-000000000012",
+              "leftValue": "={{ $json.allow_transcription === true && $json.allow_external_writes === true && $json.test_mode === false && $json.atomic_claim_verified === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000014",
+      "name": "HTTP Request - Submit AssemblyAI Transcription",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1800,
+        -240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/transcript",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.assemblyai_submit_request) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ASSEMBLYAI_CREDENTIAL",
+          "name": "AssemblyAI API"
+        }
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "Edit Fields - Return Episode Intake Hold",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1800,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:true,status:'RECEIVED',transcription_job_id:null,next_stage:'CONFIGURATION_REQUIRED',paid_calls_executed:0,external_writes_executed:0}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000016",
+      "name": "Edit Fields - Return Intake State Fallback",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1540,
+        100
+      ],
+      "parameters": {
+        "mode": "raw",
+        "duplicateItem": false,
+        "jsonOutput": "={{ ({...$json,ok:false,status:'STATE_FALLBACK',next_stage:null}) }}",
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000015",
+      "name": "Switch - Route Podcast Intake Source",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        760,
+        -220
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "90000000-0000-4000-8000-000000000013",
+                    "leftValue": "={{ $json.intake_source }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "90000000-0000-4000-8000-000000000014",
+                    "leftValue": "={{ $json.intake_source }}",
+                    "rightValue": "drive_trigger",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "drive_trigger"
+            }
+          ]
+        },
+        "looseTypeValidation": false,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "fallback"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000016",
+      "name": "Google Drive Trigger - Watch Podcast Intake Folder",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        220
+      ],
+      "parameters": {
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_INTAKE_FOLDER_ID"
+        },
+        "event": "fileCreated",
+        "options": {
+          "fileType": "all"
+        },
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "oAuth2"
+      },
+      "disabled": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000017",
+      "name": "Code - Normalize Google Drive Intake Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const f=$input.first().json;return [{json:{body:{source_file_id:f.id||'',source_version:String(f.version||f.modifiedTime||''),source_checksum:f.md5Checksum||f.sha256Checksum||'',brand_profile_id:f.brand_profile_id||'',intake_source:'drive_trigger',drive_event:f}}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000018",
+      "name": "Code - Check Intake Storage Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        -360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;\nconst approved={PODCAST_AIRTABLE_BASE_ID:'appYOURBASEID0000',PODCAST_AIRTABLE_DEFAULT_TABLE_ID:'tblYOURTABLE00006',PODCAST_AIRTABLE_VIEW_ID:'viwYOURVIEWID0000',PODCAST_INTAKE_FOLDER_ID:'YOUR_INTAKE_FOLDER_ID',PODCAST_FINAL_FOLDER_ID:'YOUR_OUTPUT_FOLDER_ID',PODCAST_AIRTABLE_CREDENTIAL_READY:'true',PODCAST_DRIVE_CREDENTIAL_READY:'true'};\nconst read=(key)=>{const direct=x.storage_config?.[key]??x[key];if(direct!==undefined&&direct!==null&&String(direct).trim()!=='')return String(direct).trim();try{const variable=String($vars[key]||'').trim();if(variable)return variable;}catch{}return approved[key]||'';};\nconst tableKeys=[\"config\",\"profiles\",\"episodes\"];\nconst tables=Object.fromEntries(tableKeys.map(k=>[k,read('PODCAST_AIRTABLE_TABLE_'+k.toUpperCase())]));\nconst storage_config={airtable_base_id:read('PODCAST_AIRTABLE_BASE_ID'),airtable_unassigned_table_id:read('PODCAST_AIRTABLE_DEFAULT_TABLE_ID'),airtable_view_id:read('PODCAST_AIRTABLE_VIEW_ID'),drive_id:read('PODCAST_DRIVE_ID'),intake_folder_id:read('PODCAST_INTAKE_FOLDER_ID'),working_folder_id:read('PODCAST_WORKING_FOLDER_ID'),final_folder_id:read('PODCAST_FINAL_FOLDER_ID'),airtable_credential_ready:read('PODCAST_AIRTABLE_CREDENTIAL_READY')==='true',drive_credential_ready:read('PODCAST_DRIVE_CREDENTIAL_READY')==='true',tables};\nconst resourceKeys=[\"airtable_base_id\",\"drive_id\",\"intake_folder_id\",\"table:config\",\"table:profiles\",\"table:episodes\"];\nconst missing_resources=[];for(const k of resourceKeys){if(k.startsWith('table:')){const t=k.slice(6);if(!tables[t])missing_resources.push(k);}else if(!storage_config[k])missing_resources.push(k);}\nconst missing_credentials=[];for(const c of [\"airtable\",\"drive\"])if(!storage_config[c+'_credential_ready'])missing_credentials.push(c);\nreturn [{json:{...x,storage_config,storage_configuration_ready:missing_resources.length===0&&missing_credentials.length===0,storage_missing_resources:missing_resources,storage_missing_credentials:missing_credentials,storage_guard_fail_closed:true}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000020",
+      "name": "IF - Is Intake Storage Configuration Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1500,
+        -360
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000019",
+              "leftValue": "={{ $json.storage_configuration_ready === true && $json.allow_external_writes === true && $json.test_mode === false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000021",
+      "name": "Google Drive - Download Source Recording",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1740,
+        -420
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.source_file_id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000022",
+      "name": "Airtable - Load Automation Configuration",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        -420
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.tables.config }}"
+        },
+        "filterByFormula": "={Config Key}='PODCAST_AUTOMATION'",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000023",
+      "name": "Airtable - Load Brand Profile",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2220,
+        -420
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.tables.profiles }}"
+        },
+        "filterByFormula": "={{ \"{brand_profile_id}='\" + $('Code - Check Intake Storage Configuration').first().json.brand_profile_id + \"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {},
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000024",
+      "name": "Airtable - Upsert Episode By Dedupe Key",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2460,
+        -420
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_id": "={{ $('Code - Check Intake Storage Configuration').first().json.episode_id || $('Code - Check Intake Storage Configuration').first().json.episode_dedupe_key }}",
+            "episode_dedupe_key": "={{ $('Code - Check Intake Storage Configuration').first().json.episode_dedupe_key }}",
+            "source_file_id": "={{ $('Code - Check Intake Storage Configuration').first().json.source_file_id }}",
+            "source_version": "={{ $('Code - Check Intake Storage Configuration').first().json.source_version }}",
+            "source_checksum": "={{ $('Code - Check Intake Storage Configuration').first().json.source_checksum }}",
+            "status": "RECEIVED",
+            "allow_error_writes": "={{ $('Code - Apply Podcast Automation Configuration').first().json.allow_error_writes === true }}",
+            "context_risk_review_threshold": "={{ $('Code - Apply Podcast Automation Configuration').first().json.context_risk_review_threshold ?? '' }}",
+            "last_completed_stage": "INTAKE_VALIDATED"
+          },
+          "matchingColumns": [
+            "episode_dedupe_key"
+          ],
+          "schema": [
+            {
+              "id": "episode_id",
+              "displayName": "episode_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "episode_dedupe_key",
+              "displayName": "episode_dedupe_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_file_id",
+              "displayName": "source_file_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_version",
+              "displayName": "source_version",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_checksum",
+              "displayName": "source_checksum",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "allow_error_writes",
+              "displayName": "allow_error_writes",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "context_risk_review_threshold",
+              "displayName": "context_risk_review_threshold",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000025",
+      "name": "Code - Restore Intake Context After Storage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        -420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Apply Podcast Automation Configuration').first().json;return [{json:{...source,episode_record:response}}];"
+      }
+    },
+    {
+      "id": "90000000-0000-4000-8000-000000000026",
+      "name": "Airtable - Save Transcription Job And State",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3420,
+        -520
+      ],
+      "parameters": {
+        "resource": "record",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "episode_dedupe_key": "={{ $('Code - Check Intake Storage Configuration').first().json.episode_dedupe_key }}",
+            "status": "TRANSCRIBING",
+            "transcription_job_id": "={{ $json.id || $json.transcript_id || \"\" }}",
+            "last_completed_stage": "RECEIVED",
+            "allow_error_writes": "={{ $('Code - Apply Podcast Automation Configuration').first().json.allow_error_writes === true }}",
+            "context_risk_review_threshold": "={{ $('Code - Apply Podcast Automation Configuration').first().json.context_risk_review_threshold ?? '' }}"
+          },
+          "matchingColumns": [
+            "episode_dedupe_key"
+          ],
+          "schema": [
+            {
+              "id": "episode_dedupe_key",
+              "displayName": "episode_dedupe_key",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transcription_job_id",
+              "displayName": "transcription_job_id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_completed_stage",
+              "displayName": "last_completed_stage",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "allow_error_writes",
+              "displayName": "allow_error_writes",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "context_risk_review_threshold",
+              "displayName": "context_risk_review_threshold",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "readOnly": false,
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "typecast": false,
+          "ignoreFields": ""
+        },
+        "authentication": "airtableTokenApi"
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "id": "91000000-0000-4000-8000-000000000001",
+      "name": "Airtable - Find Episode By Dedupe Key",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        2460,
+        -180
+      ],
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "resource": "record",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.airtable_base_id }}"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Code - Check Intake Storage Configuration').first().json.storage_config.tables.episodes }}"
+        },
+        "filterByFormula": "={{ \"{episode_dedupe_key}='\"+$('Code - Check Intake Storage Configuration').first().json.episode_dedupe_key+\"'\" }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {}
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000001",
+      "name": "Code - Resolve Episode Dedupe Search",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        -160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows=$input.all();const source=$('Code - Apply Podcast Automation Configuration').first().json;const record=rows.map(i=>i.json).find(j=>j&&Object.keys(j).length&&(j.id||j.fields));const f=record?.fields||record||{};const bool=value=>value===true||String(value||'').trim().toLowerCase()==='true';const rawThreshold=f.context_risk_review_threshold;const threshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!==''?Number(rawThreshold):NaN;return [{json:{...source,allow_error_writes:f.allow_error_writes===undefined?source.allow_error_writes:bool(f.allow_error_writes),context_risk_review_threshold:Number.isFinite(threshold)?threshold:source.context_risk_review_threshold,episode_found:Boolean(record),episode_record:f,episode_state:String(f.status||'RECEIVED').toUpperCase(),transcription_job_id:f.transcription_job_id||source.transcription_job_id||'',episode_id:f.episode_id||source.episode_id||source.episode_dedupe_key,last_completed_stage:String(f.last_completed_stage||source.last_completed_stage||'INTAKE_VALIDATED')}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000003",
+      "name": "IF - Does Episode Dedupe Record Exist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2940,
+        -160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92000000-0000-4000-8000-000000000002",
+              "leftValue": "={{ $json.episode_found === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000004",
+      "name": "Code - Restore Existing Episode State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3180,
+        -100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,episode_state:String(x.episode_record?.status||x.episode_state||'RECEIVED').toUpperCase(),existing_episode_reused:true}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000005",
+      "name": "Code - Build Structured Episode Intake Boundary Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3900,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const input=$input.first().json;let seeded={};try{seeded=$('Code - Apply Podcast Automation Configuration').first().json||seeded;}catch{}try{seeded=$('Code - Check Intake Storage Configuration').first().json||seeded;}catch{}const x={...seeded,...input};const text=String(x.error?.message||x.error_message||x.message||'Boundary operation failed').replace(/(?:bearer|token|key|secret|authorization)[^\\s]*/ig,'[REDACTED]');return [{json:{workflow_name:\"Episode Intake\",execution_id:$execution.id,stage:\"EPISODE_INTAKE\",episode_id:x.episode_id||'',asset_id:x.asset_id||'',asset_version:Number(x.asset_version||0),stage_run_key:x.computed_stage_run_key||x.stage_run_key||'',attempt_number:Number(x.attempt_number||1),error_code:String(x.error?.code||x.error_code||'BOUNDARY_FAILURE'),error_message:text.slice(0,500),retryable:Boolean(x.retryable),test_mode:x.test_mode!==false,allow_external_writes:false,allow_error_writes:x.allow_error_writes===true,last_completed_stage:String(x.last_completed_stage||seeded.last_completed_stage||'')}}];"
+      }
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000006",
+      "name": "Execute Sub-workflow - Dispatch Episode Intake Failure To Error Handling",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4140,
+        -40
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YKuXZfayKjOvRHdR"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "workflow_name": "={{ $json.workflow_name }}",
+            "execution_id": "={{ $json.execution_id }}",
+            "stage": "={{ $json.stage }}",
+            "episode_id": "={{ $json.episode_id }}",
+            "asset_id": "={{ $json.asset_id }}",
+            "asset_version": "={{ $json.asset_version }}",
+            "stage_run_key": "={{ $json.stage_run_key }}",
+            "attempt_number": "={{ $json.attempt_number }}",
+            "error_code": "={{ $json.error_code }}",
+            "error_message": "={{ $json.error_message }}",
+            "retryable": "={{ $json.retryable }}",
+            "test_mode": "={{ $json.test_mode }}",
+            "allow_external_writes": false,
+            "allow_error_writes": "={{ $json.allow_error_writes === true }}",
+            "last_completed_stage": "={{ $json.last_completed_stage || \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "disabled": true,
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "92000000-0000-4000-8000-000000000007",
+      "name": "Code - Return Episode Intake Failure Dispatch Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4380,
+        -40
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x=$input.first().json;return [{json:{...x,error_dispatched:true}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000021",
+      "name": "Code - Restore Source Binary For AssemblyAI Upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const current=$input.first();const source=$('Google Drive - Download Source Recording').first();const binary=source.binary;if(!binary?.data)return [{json:{...current.json,upload_contract_valid:false,error_code:'SOURCE_BINARY_MISSING',retryable:false}}];return [{json:{...current.json,upload_contract_valid:true},binary}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000022",
+      "name": "HTTP Request - Upload Source To AssemblyAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        -360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": false,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_ASSEMBLYAI_CREDENTIAL",
+          "name": "AssemblyAI API"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput",
+      "retryOnFail": false,
+      "maxTries": 1,
+      "waitBetweenTries": 0
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000023",
+      "name": "Code - Validate AssemblyAI Upload And Build Transcript Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response=$input.first().json;const source=$('Code - Restore Source Binary For AssemblyAI Upload').item.json;const upload_url=String(response.upload_url||'');const valid=/^https:\\/\\//i.test(upload_url);const request=valid?{audio_url:upload_url,speech_models:['universal-3-pro','universal-2'],language_detection:true,speaker_labels:true,punctuate:true,format_text:true}:null;return [{json:{...source,assemblyai_upload_response:response,assemblyai_upload_valid:valid,upload_url,assemblyai_submit_request:request,callback_mode:'authenticated_polling',callback_disabled_reason:'secure webhook secret injection is not configured'}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000024",
+      "name": "Code - Parse AssemblyAI Transcript Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        -420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const body=$input.first().json;const source=$('Code - Validate AssemblyAI Upload And Build Transcript Request').item.json;const id=String(body.id||'');const status=String(body.status||'').toLowerCase();const accepted=Boolean(id)&&['queued','processing','completed'].includes(status);return [{json:{...source,provider_response:body,transcription_job_id:id,provider_state:status,submission_accepted:accepted,last_completed_stage:accepted?'TRANSCRIPTION_SUBMITTED':source.last_completed_stage,error_code:accepted?'':'ASSEMBLYAI_SUBMIT_RESPONSE_INVALID',retryable:false}}];"
+      }
+    },
+    {
+      "id": "94000000-0000-4000-8000-000000000025",
+      "name": "Code - Hold Ambiguous AssemblyAI Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        -180
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const e=$input.first().json;const source=$('Code - Validate AssemblyAI Upload And Build Transcript Request').item.json;const status=Number(e.statusCode||e.error?.statusCode||0);const ambiguous=status===0||status>=500;return [{json:{...source,error:e,provider_state:ambiguous?'HELD_AMBIGUOUS':'FAILED',error_code:ambiguous?'ASSEMBLYAI_SUBMIT_AMBIGUOUS':'ASSEMBLYAI_SUBMIT_REJECTED',retryable:false,operator_reconciliation_required:ambiguous}}];"
+      }
+    },
+    {
+      "id": "95000000-0000-4000-8000-000000000001",
+      "name": "Code - Apply Podcast Automation Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        -420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const record=$input.first().json;const source=$('Code - Check Intake Storage Configuration').first().json;const fields=record.fields||record||{};const read=(...keys)=>{for(const key of keys)if(fields[key]!==undefined&&fields[key]!==null&&String(fields[key]).trim()!=='')return fields[key];return undefined;};const bool=value=>value===true||String(value||'').trim().toLowerCase()==='true';const rawThreshold=read('context_risk_review_threshold','Context Risk Review Threshold');const hasThreshold=rawThreshold!==undefined&&rawThreshold!==null&&String(rawThreshold).trim()!=='';const threshold=hasThreshold?Number(rawThreshold):NaN;return [{json:{...source,automation_config_record_id:String(record.id||''),automation_config:fields,allow_error_writes:bool(read('allow_error_writes','Allow Error Writes')),context_risk_review_threshold:Number.isFinite(threshold)?threshold:null,last_completed_stage:String(source.last_completed_stage||'INTAKE_VALIDATED')}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Receive Podcast Intake": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Validate And Dedupe Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Validate And Dedupe Intake": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Podcast Intake Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Podcast Intake Valid?": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route Podcast Intake Source",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook - Reject Invalid Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook - Accept Valid Intake": {
+      "main": [
+        [
+          {
+            "node": "Crypto - Build Episode Dedupe Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto - Build Episode Dedupe Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Check Intake Storage Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route Existing Episode State": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Episode Intake Hold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Episode Intake Hold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Is Transcription Spend Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Transcription Spend Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Source Binary For AssemblyAI Upload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Episode Intake Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Submit AssemblyAI Transcription": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse AssemblyAI Transcript Submission",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Hold Ambiguous AssemblyAI Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route Podcast Intake Source": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - Accept Valid Intake",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Crypto - Build Episode Dedupe Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger - Watch Podcast Intake Folder": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Google Drive Intake Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Google Drive Intake Event": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Validate And Dedupe Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Check Intake Storage Configuration": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Intake Storage Configuration Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Intake Storage Configuration Ready?": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Download Source Recording",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Episode Intake Hold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Download Source Recording": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Load Automation Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Automation Configuration": {
+      "main": [
+        [
+          {
+            "node": "Code - Apply Podcast Automation Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Load Brand Profile": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Find Episode By Dedupe Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Upsert Episode By Dedupe Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Intake Context After Storage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Intake Context After Storage": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route Existing Episode State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Save Transcription Job And State": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Episode Intake Hold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Find Episode By Dedupe Key": {
+      "main": [
+        [
+          {
+            "node": "Code - Resolve Episode Dedupe Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Resolve Episode Dedupe Search": {
+      "main": [
+        [
+          {
+            "node": "IF - Does Episode Dedupe Record Exist?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Does Episode Dedupe Record Exist?": {
+      "main": [
+        [
+          {
+            "node": "Code - Restore Existing Episode State",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Upsert Episode By Dedupe Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Existing Episode State": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route Existing Episode State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Return Intake State Fallback": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Structured Episode Intake Boundary Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Structured Episode Intake Boundary Failure": {
+      "main": [
+        [
+          {
+            "node": "Execute Sub-workflow - Dispatch Episode Intake Failure To Error Handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Sub-workflow - Dispatch Episode Intake Failure To Error Handling": {
+      "main": [
+        [
+          {
+            "node": "Code - Return Episode Intake Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Return Episode Intake Failure Dispatch Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Restore Source Binary For AssemblyAI Upload": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Upload Source To AssemblyAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Upload Source To AssemblyAI": {
+      "main": [
+        [
+          {
+            "node": "Code - Validate AssemblyAI Upload And Build Transcript Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Validate AssemblyAI Upload And Build Transcript Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Submit AssemblyAI Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse AssemblyAI Transcript Submission": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Save Transcription Job And State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Hold Ambiguous AssemblyAI Submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Return Intake State Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Apply Podcast Automation Configuration": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Load Brand Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "executionTimeout": 1200,
+    "availableInMCP": false,
+    "errorWorkflow": "YKuXZfayKjOvRHdR"
+  },
+  "active": false
+}
