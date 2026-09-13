@@ -1,0 +1,4 @@
+# The workflow JSON is the deliverable here, not incidental data. Linguist excludes
+# .json as "data" by default, which leaves the repo showing no language at all.
+workflows/**/*.json linguist-detectable=true
+workflows/**/*.json linguist-language=JSON
